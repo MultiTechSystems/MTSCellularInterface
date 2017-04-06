@@ -18,7 +18,7 @@ public:
 	* Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
 	* Power on powers up the modem and verifies AT command response.
 	*/
-	virtual bool modemPower(bool on_off);
+	virtual bool radioPower(Power option);
 	
 	/** PPP connect command.
 	* Connects the radio to the cellular network.
@@ -26,13 +26,13 @@ public:
 	* @returns true if PPP connection to the network succeeded,
 	* false if the PPP connection failed.
 	*/
-	virtual int connect();
+	virtual bool connect();
      
 	/** PPP disconnect command.
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
-	virtual int disconnect();
+	virtual bool disconnect();
 
     /** Checks if the radio is connected to the cell network.
     * Checks antenna signal, cell tower registration, and context activation
