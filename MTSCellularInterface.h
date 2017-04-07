@@ -11,8 +11,9 @@
 class MTSCellularInterface : public NetworkStack, public CellularInterface
 {
 public:
-	MTSCellularInterface(PinName RADIO_TX, PinName RADIO_RX, PinName RADIO_RTS = NC, PinName RADIO_CTS = NC, PinName RADIO_DCD = NC,
-		PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC, PinName Radio_Power = , PinName Radio_Reset = );
+	MTSCellularInterface(PinName RADIO_TX, PinName RADIO_RX, PinName RADIO_RTS = NC, PinName RADIO_CTS = NC,
+		PinName RADIO_DCD = NC,	PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC,
+		PinName Radio_Power = NC, PinName Radio_Reset = NC);
 
 	/** Power the modem on or off.
 	* Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
@@ -26,13 +27,13 @@ public:
 	* @returns true if PPP connection to the network succeeded,
 	* false if the PPP connection failed.
 	*/
-	virtual bool connect();
+	virtual int connect();
      
 	/** PPP disconnect command.
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
-	virtual bool disconnect();
+	virtual int disconnect();
 
     /** Checks if the radio is connected to the cell network.
     * Checks antenna signal, cell tower registration, and context activation
@@ -77,7 +78,7 @@ public:
 	*
 	* @returns a vector of existing SMS messages each as an Sms struct.
 	*/
-    virtual std::vector<Cellular::Sms> getReceivedSms();
+    virtual std::vector<Sms> getReceivedSms();
 
     /** This method can be used to remove/delete all received SMS messages
 	* even if they have never been retrieved or read.
@@ -229,8 +230,6 @@ protected:
 
 private:
 	MTSCellularRadio _radio;
-
-}
-
+};
 #endif //MTSCELLULARINTERFACE
 

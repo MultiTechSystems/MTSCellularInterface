@@ -6,22 +6,73 @@
 #define MTSCELLULARRADIO_H
 
 #include "ATParser.h"
+#include <string>
+#include <vector>
+
+//Special Payload Character Constants (ASCII Values)
+const char ETX	  = 0x03;	//Ends socket connection
+const char DLE	  = 0x10;	//Escapes ETX and DLE within Payload
+const char CR	  = 0x0D;	//Carriage Return
+const char NL	  = 0x0A;	//Newline
+const char CTRL_Z = 0x1A;	//Control-Z
+
+/// An enumeration for common responses.
+enum Code {
+	MTS_SUCCESS, MTS_ERROR, MTS_FAILURE, MTS_NO_RESPONSE
+};
+
+// Enumeration for radio power.
+enum Power{
+	RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
+};
+
+/** This structure contains the data for an SMS message.
+*/
+struct Sms {
+	/// Message Phone Number
+	std::string phoneNumber;
+	/// Message Body
+	std::string message;
+	/// Message Timestamp
+	std::string timestamp;
+};
+
+/** This structure contains the data for GPS position.
+*/
+struct gpsData {
+	bool success;
+	/// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
+	std::string latitude;
+	/// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
+	std::string longitude;
+	/// Horizontal Diluition of Precision.
+	float hdop;
+	/// Altitude - mean-sea-level (geoid) in meters.
+	float altitude;
+	/// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
+	int fix;
+	/// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
+	std::string cog;
+	/// Speed over ground (Km/hr).
+	float kmhr;
+	/// Speed over ground (knots).
+	float knots;
+	/// Total number of satellites in use.
+	int satellites;
+	/// Date and time in the format YY/MM/DD,HH:MM:SS.
+	std::string timestamp;
+};
 
 class MTSCellularRadio
 {
 public:
 	MTSCellularRadio(PinName RADIO_TX, PinName RADIO_RX, PinName RADIO_RTS = NC, PinName RADIO_CTS = NC, PinName RADIO_DCD = NC,
-		PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC, PinName Radio_Power = , PinName Radio_Reset = );
+		PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC, PinName Radio_Power = NC, PinName Radio_Reset = NC);
 
 
 	// Class ping paramter constants
     static const unsigned int PINGDELAY = 3;	//Time to wait on each ping for a response before timimg out (seconds)
     static const unsigned int PINGNUM = 4;		//Number of pings to try on ping command
-
-	// Enumeration for radio power.
-	enum Power{
-		OFF, ON, SLEEP, RESET
-		};
 
     /// Enumeration for different cellular radio types.
     enum Radio {
@@ -32,51 +83,13 @@ public:
     enum Registration {
         NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
     };
-
-	/** This structure contains the data for an SMS message.
-	*/
-    struct Sms {
-        /// Message Phone Number
-        std::string phoneNumber;
-        /// Message Body
-        std::string message;
-        /// Message Timestamp
-        std::string timestamp;
-    };
-
-	/** This structure contains the data for GPS position.
-	*/
-    struct gpsData {
-        bool success;
-        /// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
-        std::string latitude;
-        /// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
-        std::string longitude;
-        /// Horizontal Diluition of Precision.
-        float hdop;
-        /// Altitude - mean-sea-level (geoid) in meters.
-        float altitude;
-        /// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
-        int fix;
-        /// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
-        std::string cog;
-        /// Speed over ground (Km/hr).
-        float kmhr;
-        /// Speed over ground (knots).
-        float knots;
-        /// Total number of satellites in use.
-        int satellites;
-        /// Date and time in the format YY/MM/DD,HH:MM:SS.
-        std::string timestamp;
-    };
-    
+   
     /** Controls radio power.
     	* Before power is removed, the connection must be brought down.
     	*
     	* @returns true if successful, false if a failure was detected.
     	*/
-    bool power(Power option){
-   	};
+    bool power(Power option);
     	
 	/** Sets up the physical connection pins
 	*   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
@@ -116,7 +129,7 @@ public:
 	* @param the APN as a string.
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code setApn(const std::string& apn) = 0;
+    virtual Code setApn(const std::string& apn);
 
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
@@ -200,7 +213,7 @@ public:
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
-	virtual void disconnect();	    		
+	virtual bool disconnect();	    		
 
 	/** Checks if the radio is connected to the cell network.
 	* Checks antenna signal, cell tower registration, and context activation
@@ -240,7 +253,7 @@ public:
 	*
 	* @returns a vector of existing SMS messages each as an Sms struct.
 	*/
-	virtual std::vector<Cellular::Sms> getReceivedSms();
+	virtual std::vector<Sms> getReceivedSms();
 
 	/** This method can be used to remove/delete all received SMS messages
 	* even if they have never been retrieved or read.
@@ -283,13 +296,24 @@ public:
 	virtual bool GPSgotFix();	
 
 
-private:
+protected:
 	BufferedSerial _serial;
 	ATParser _parser;
 
 	std::string apn;		//APN setting for the radio. Access Point Name
     Radio type;				//The type of radio being used	
 
+    bool echoMode; 			//Specifies if the echo mode is currently enabled.
+    bool gpsEnabled;    	//true if GPS is enabled, else false.
+    bool pppConnected; 		//Specifies if a PPP session is currently connected.
+    //Mode socketMode; 		//The current socket Mode.
+    bool socketOpened; 		//Specifies if a Socket is presently opened.
+    bool socketCloseable; 	//Specifies is a Socket can be closed.
+    unsigned int local_port; //Holds the local port for socket connections.
+    std::string local_address; //Holds the local address for socket connections.
+    unsigned int host_port; //Holds the remote port for socket connections.
+    std::string host_address; //Holds the remote address for socket connections.
+    
 	DigitalIn* radio_cts;	//Maps to the radio's cts signal
 	DigitalOut* radio_rts;	//Maps to the radio's rts signal
     DigitalIn* radio_dcd;	//Maps to the radio's dcd signal
@@ -298,7 +322,7 @@ private:
     DigitalOut* radio_dtr;	//Maps to the radio's dtr signal
 
     DigitalOut* resetLine;	//Maps to the radio's reset signal 
-}
+};
 
 #endif // MTSCELLULARRADIO_H
 

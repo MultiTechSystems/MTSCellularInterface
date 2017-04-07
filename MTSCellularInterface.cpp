@@ -12,6 +12,9 @@
 #define CELL_RADIO_MISC_TIMEOUT    500
 
 // MTSCellularInterface implementation
-MTSCellularInterface::MTSCellularInterface()
+MTSCellularInterface::MTSCellularInterface(PinName tx, PinName rx, PinName rts, PinName cts,
+	PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset)
+	: _radio(tx, rx)
 {
+
 }
