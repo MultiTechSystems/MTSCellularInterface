@@ -3,6 +3,7 @@
  */
 
 #include "MTSCellularRadio.h"
+Serial debug1(USBTX, USBRX);
 
 MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, PinName cts, PinName rts,
     PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset)
@@ -35,11 +36,17 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, PinName cts, PinName 
         //
         
     // identify the radio
-        && _parser.send("AT+CWMODE=%d", mode)
+    debug1.printf("creating MTSCelluarRadio object!\r\n");
+    char buffer[30];
+    _parser.setTimeout(10);
+    _parser.send("ati");
+    _parser.read(buffer, 30);
+    debug1.printf("ati returns %s", buffer);
+/*        && _parser.send("AT+CWMODE=%d", mode)
         && _parser.recv("OK")
         && _parser.send("AT+CIPMUX=1")
         && _parser.recv("OK");        
-        // See  CellularFactory.cpp... CellularFactory::create
+*/        // See  CellularFactory.cpp... CellularFactory::create
         
     // power on the radio
         //
@@ -49,11 +56,11 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, PinName cts, PinName 
 
 Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc)
 {
-    if(socketOpened) {
+/*    if(socketOpened) {
         logError("socket is open. Can not send AT commands");
         return MTS_ERROR;
     }
-
+*/
     string response = sendCommand(command, timeoutMillis, esc);
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
@@ -68,7 +75,7 @@ Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int
 
 string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
 {
-    if(io == NULL) {
+/*    if(io == NULL) {
         logError("MTSBufferedIO not set");
         return "";
     }
@@ -78,11 +85,11 @@ string MTSCellularRadio::sendCommand(const std::string& command, unsigned int ti
     }
 
     io->rxClear();
-    io->txClear();
-    std::string result;
-
+    io->txClear();*/
+    std::string result = "remove me";
+/*
     //Attempt to write command
-    if(io->write(command.data(), command.size(), timeoutMillis) != command.size()) {
+    if(_parser.write(command.data(), command.size(), timeoutMillis) != command.size()) {
         //Failed to write command
         if (command != "AT" && command != "at") {
             logError("failed to send command to radio within %d milliseconds", timeoutMillis);
@@ -146,7 +153,8 @@ string MTSCellularRadio::sendCommand(const std::string& command, unsigned int ti
             done = true;
         }
     } while (!done);
-   
+
+*/   
     return result;
 }
 

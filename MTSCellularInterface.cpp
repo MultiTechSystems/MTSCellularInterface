@@ -18,3 +18,114 @@ MTSCellularInterface::MTSCellularInterface(PinName tx, PinName rx, PinName rts, 
 {
 
 }
+
+bool MTSCellularInterface::radioPower(Power option){
+    return true;
+}
+	
+int MTSCellularInterface::connect(){
+    return 0;
+}
+     
+int MTSCellularInterface::disconnect(){
+    return 0;
+}
+
+bool MTSCellularInterface::isConnected(){
+    return true;
+}
+
+void MTSCellularInterface::reset(){
+    return;
+}
+
+bool MTSCellularInterface::ping(const std::string& address){
+    return true;
+} 	
+	
+Code MTSCellularInterface::sendSMS(const std::string& phoneNumber, const std::string& message){
+    return MTS_SUCCESS;
+}
+
+Code MTSCellularInterface::sendSMS(const Sms& sms){
+    return MTS_SUCCESS;    
+}
+
+std::vector<Sms> MTSCellularInterface::getReceivedSms(){
+    std::vector<Sms> vSms;
+    return vSms;
+}
+
+Code MTSCellularInterface::deleteAllReceivedSms(){
+    return MTS_SUCCESS;
+}
+
+Code MTSCellularInterface::deleteOnlyReceivedReadSms(){
+    return MTS_SUCCESS;
+}	
+
+bool MTSCellularInterface::GPSenable(){
+    return true;
+}
+
+bool MTSCellularInterface::GPSdisable(){
+    return true;
+}
+
+bool MTSCellularInterface::GPSenabled(){
+    return true;
+}
+        
+gpsData MTSCellularInterface::GPSgetPosition(){
+    gpsData response;
+    response.success = true;
+    return response;
+}
+
+bool MTSCellularInterface::GPSgotFix(){
+    return true;    
+}	
+
+int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
+    return 0;
+}
+
+int MTSCellularInterface::socket_close(void *handle){
+    return 0;
+}
+
+int MTSCellularInterface::socket_bind(void *handle, const SocketAddress &address){
+    return 0;
+}
+
+int MTSCellularInterface::socket_listen(void *handle, int backlog){
+    return 0;
+}
+
+int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){
+    return 0;
+}
+
+int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddress *address){
+    return 0;
+}
+
+int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
+    return 0;
+}
+
+int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
+    return 0;
+}
+
+int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size){
+    return 0;
+}
+
+int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size){
+    return 0;
+}
+
+void MTSCellularInterface::socket_attach(void *handle, void (*callback)(void *), void *data){
+    return;
+}
