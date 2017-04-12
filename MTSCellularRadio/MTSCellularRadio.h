@@ -26,6 +26,17 @@ enum Power{
 	RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
 };
 
+/// Enumeration for different cellular radio types.
+enum Radio {
+	NA, MTSMC_H5, MTSMC_EV3, MTSMC_G3, MTSMC_C2, MTSMC_H5_IP, MTSMC_EV3_IP, MTSMC_C2_IP, MTSMC_LAT1, MTSMC_LVW2, MTSMC_LEU1
+};
+
+/// An enumeration of radio registration states with a cell tower.
+enum Registration {
+	NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
+};
+
+
 /** This structure contains the data for an SMS message.
 */
 struct Sms {
@@ -66,9 +77,8 @@ struct gpsData {
 class MTSCellularRadio
 {
 public:
-	MTSCellularRadio(PinName RADIO_TX, PinName RADIO_RX, PinName RADIO_RTS = NC, PinName RADIO_CTS = NC, PinName RADIO_DCD = NC,
-		PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC, PinName Radio_Power = NC, PinName Radio_Reset = NC);
-
+	MTSCellularRadio(PinName Radio_tx, PinName Radio_rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
+		PinName Radio_dsr, PinName Radio_dtr, PinName Radio_ri, PinName Radio_Power, PinName Radio_Reset*/);
 
 	// Class ping paramter constants
     static const unsigned int PINGDELAY = 3;	//Time to wait on each ping for a response before timimg out (seconds)
@@ -225,6 +235,34 @@ public:
 	*/
 	virtual bool isConnected();
 
+    /**
+    * Get the IP address of ESP8266
+    *
+    * @return null-teriminated IP address or null if no IP address is assigned
+    */
+    const char *getIPAddress(void);
+
+    /**
+    * Get the MAC address of ESP8266
+    *
+    * @return null-terminated MAC address or null if no MAC address is assigned
+    */
+    const char *getMACAddress(void);
+
+     /** Get the local gateway
+     *
+     *  @return         Null-terminated representation of the local gateway
+     *                  or null if no network mask has been recieved
+     */
+    const char *getGateway();
+
+    /** Get the local network mask
+     *
+     *  @return         Null-terminated representation of the local network mask 
+     *                  or null if no network mask has been recieved
+     */
+    const char *getNetmask();
+	
 	/** Pings specified DNS or IP address
 	 * Google DNS server used as default ping address
 	 * @returns true if ping received alive response else false

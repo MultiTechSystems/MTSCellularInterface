@@ -11,15 +11,34 @@
 class MTSCellularInterface : public NetworkStack, public CellularInterface
 {
 public:
-	MTSCellularInterface(PinName RADIO_TX, PinName RADIO_RX, PinName RADIO_RTS = NC, PinName RADIO_CTS = NC,
-		PinName RADIO_DCD = NC,	PinName RADIO_DSR = NC, PinName RADIO_DTR = NC, PinName RADIO_RI = NC,
-		PinName Radio_Power = NC, PinName Radio_Reset = NC);
+	MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX/*, PinName Radio_rts = NC, PinName Radio_cts = NC,
+		PinName Radio_dcd = NC,	PinName Radio_dsr = NC, PinName Radio_dtr = NC, PinName Radio_ri = NC,
+		PinName Radio_Power = NC, PinName Radio_Reset = NC*/);
 
 	/** Power the modem on or off.
 	* Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
 	* Power on powers up the modem and verifies AT command response.
 	*/
 	virtual bool radioPower(Power option);
+
+
+    /** Set the cellular network APN and credentials
+     *
+     *  @param apn      Optional name of the network to connect to
+     *  @param user     Optional username for the APN
+     *  @param pass     Optional password fot the APN
+     *  @return         0 on success, negative error code on failure
+     */
+    virtual int set_credentials(const char *apn, const char *username, const char *password);
+
+    /** Start the interface
+     *
+     *  @param apn      Optional name of the network to connect to
+     *  @param username Optional username for your APN
+     *  @param password Optional password for your APN 
+     *  @return         0 on success, negative error code on failure
+     */
+    virtual int connect(const char *apn, const char *username, const char *password);
 	
 	/** PPP connect command.
 	* Connects the radio to the cellular network.
@@ -34,6 +53,31 @@ public:
 	* connection if open. 
 	*/
 	virtual int disconnect();
+
+    /** Get the internally stored IP address
+     *  @return             IP address of the interface or null if not yet connected
+     */
+    virtual const char *get_ip_address();
+
+    /** Get the internally stored MAC address
+     *  @return             MAC address of the interface
+     */
+    virtual const char *get_mac_address();
+
+     /** Get the local gateway
+     *
+     *  @return         Null-terminated representation of the local gateway
+     *                  or null if no network mask has been recieved
+     */
+    virtual const char *get_gateway();
+
+    /** Get the local network mask
+     *
+     *  @return         Null-terminated representation of the local network mask
+     *                  or null if no network mask has been recieved
+     */
+     
+    virtual const char *get_netmask();
 
     /** Checks if the radio is connected to the cell network.
     * Checks antenna signal, cell tower registration, and context activation

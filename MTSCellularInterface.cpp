@@ -12,9 +12,9 @@
 #define CELL_RADIO_MISC_TIMEOUT    500
 
 // MTSCellularInterface implementation
-MTSCellularInterface::MTSCellularInterface(PinName tx, PinName rx, PinName rts, PinName cts,
-	PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset)
-	: _radio(tx, rx)
+MTSCellularInterface::MTSCellularInterface(PinName tx, PinName rx/*, PinName rts, PinName cts,
+	PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
+	: _radio(tx, rx/*, rts, cts, dcd, dsr, dtr, ri, power, reset*/)
 {
 
 }
@@ -22,7 +22,15 @@ MTSCellularInterface::MTSCellularInterface(PinName tx, PinName rx, PinName rts, 
 bool MTSCellularInterface::radioPower(Power option){
     return true;
 }
-	
+
+int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
+    return 0;
+}
+
+int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
+    return 0;
+}
+    
 int MTSCellularInterface::connect(){
     return 0;
 }
@@ -34,6 +42,27 @@ int MTSCellularInterface::disconnect(){
 bool MTSCellularInterface::isConnected(){
     return true;
 }
+
+const char *MTSCellularInterface::get_ip_address()
+{
+    return _radio.getIPAddress();
+}
+
+const char *MTSCellularInterface::get_mac_address()
+{
+    return _radio.getMACAddress();
+}
+
+const char *MTSCellularInterface::get_gateway()
+{
+    return _radio.getGateway();
+}
+
+const char *MTSCellularInterface::get_netmask()
+{
+    return _radio.getNetmask();
+}
+
 
 void MTSCellularInterface::reset(){
     return;

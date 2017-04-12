@@ -5,8 +5,8 @@
 #include "MTSCellularRadio.h"
 Serial debug1(USBTX, USBRX);
 
-MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, PinName cts, PinName rts,
-    PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset)
+MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinName rts,
+    PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
     : _serial(tx, rx, 1024), _parser(_serial)
 {
 
@@ -54,6 +54,34 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, PinName cts, PinName 
     // test to see if an AT command works
 }
 
+bool power(Power option);
+    
+/** Sets up the physical connection pins
+*   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
+*/
+bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
+    unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
+
+Code test(){
+    return MTS_SUCCESS;
+}
+
+int getSignalStrength(){
+    return 0;
+}
+
+Registration getRegistration(){
+    return REGISTERED;
+}
+
+Code setApn(const std::string& apn){
+    return MTS_SUCCESS;
+}
+
+Code setDns(const std::string& primary, const std::string& secondary){
+    return MTS_SUCCESS;
+}
+
 Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc)
 {
 /*    if(socketOpened) {
@@ -61,7 +89,7 @@ Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int
         return MTS_ERROR;
     }
 */
-    string response = sendCommand(command, timeoutMillis, esc);
+    std::string response = sendCommand(command, timeoutMillis, esc);
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
     } else if (response.find("OK") != string::npos) {
@@ -73,7 +101,7 @@ Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int
     }
 }
 
-string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
+std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
 {
 /*    if(io == NULL) {
         logError("MTSBufferedIO not set");
@@ -156,5 +184,114 @@ string MTSCellularRadio::sendCommand(const std::string& command, unsigned int ti
 
 */   
     return result;
+
+}
+
+static std::string getRegistrationNames(Registration registration){
+    std::string result;
+    return result;
+}
+
+static std::string getRadioNames(Radio radio){
+    std::string result;
+    return result;
+}
+
+Code echo(bool state){
+    return MTS_SUCCESS;
+}
+
+std::string getDeviceIP(){
+    std::string result;
+    return result;
+}
+
+std::string getEquipmentIdentifier(){
+    std::string result;
+    return result;
+}
+
+std::string getRadioType(){
+    std::string result;
+    return result;
+}
+
+bool connect(){
+    return true;
+}
+
+bool disconnect(){
+    return true;
+}
+
+bool isConnected(){
+    return true;
+}
+
+const char *MTSCellularRadio::getIPAddress(void)
+{
+    return 0;
+}
+    
+const char *MTSCellularRadio::getMACAddress(void){
+    return 0;
+}
+
+    
+const char *MTSCellularRadio::getGateway()
+{
+    return 0;
+}
+    
+const char *MTSCellularRadio::getNetmask()
+{
+    return 0;
+}
+
+bool ping(const std::string& address){
+    return true;
+}
+
+Code sendSMS(const std::string& phoneNumber, const std::string& message){
+    return MTS_SUCCESS;
+}
+
+
+Code sendSMS(const Sms& sms){
+    return MTS_SUCCESS;
+}
+
+std::vector<Sms> getReceivedSms(){
+    std::vector<Sms> sms;
+    return sms;
+}
+
+Code deleteAllReceivedSms(){
+    return MTS_SUCCESS;
+}
+
+Code deleteOnlyReceivedReadSms(){
+    return MTS_SUCCESS;
+}
+
+bool GPSenable(){
+    return true;
+}
+
+bool GPSdisable(){
+    return true;
+}
+
+bool GPSenabled(){
+    return true;
+}
+
+gpsData GPSgetPosition(){
+    gpsData data;
+    return data;
+}
+
+bool GPSgotFix(){
+    return true;
 }
 
