@@ -35,8 +35,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     // setup the battery circuit
         //
         
-    // identify the radio
-    /* wait for radio to get into a good state */
+    // wait for radio to get into a good state
     while (true) {
         _parser.send("AT\r\n");
         if (_parser.recv("OK")) {
@@ -47,6 +46,43 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         }
         wait(1);
     }
+
+    // identify the radio "ATI4" gets us the model (HE910, DE910, etc)
+    while (true) {
+        std::string mNumber;
+        std::string model;
+        model = sendCommand("ATI4", 3000);
+        if (model.find("HE910") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_H5;
+            mNumber = "HE910";
+        } else if (model.find("DE910") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_EV3;
+            mNumber = "DE910";
+        } else if (model.find("CE910") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_C2;
+            mNumber = "CE910";
+        } else if (model.find("GE910") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_G3;
+            mNumber = "GE910";
+        } else if (model.find("LE910-NAG") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_LAT1;
+            mNumber = "LE910-NAG";
+        } else if (model.find("LE910-SVG") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_LVW2;
+            mNumber = "LE910-SVG";
+        } else if (model.find("LE910-EUG") != std::string::npos) {
+            type = MTSCellularRadio::MTSMC_LEU1;
+            mNumber = "LE910-EUG";
+        } else {
+            debug1.printf("Determining radio type");
+        }
+        if (type != MTSCellularRadio::NA) {
+            debug1.printf("radio model: %s", mNumber.c_str());
+            break;
+        }
+        wait(1);
+    }
+    
 
 /*    
     debug1.printf("creating MTSCelluarRadio object!\r\n");
@@ -107,67 +143,65 @@ Code setApn(const std::string& apn){
 Code setDns(const std::string& primary, const std::string& secondary){
     return MTS_SUCCESS;
 }
+*/
 
-Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc)
-{*/
+
+int MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc)
+{
 /*    if(socketOpened) {
         logError("socket is open. Can not send AT commands");
         return MTS_ERROR;
     }
 */
-/*    std::string response = sendCommand(command, timeoutMillis, esc);
+    std::string response = sendCommand(command, timeoutMillis, esc);
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
-    } else if (response.find("OK") != string::npos) {
+    } else if (response.find("OK") != std::string::npos) {
         return MTS_SUCCESS;
-    } else if (response.find("ERROR") != string::npos) {
+    } else if (response.find("ERROR") != std::string::npos) {
         return MTS_ERROR;
     } else {
         return MTS_FAILURE;
     }
 }
 
+
 std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
-{*/
+{
 /*    if(io == NULL) {
-        logError("MTSBufferedIO not set");
-        return "";
-    }
-    if(socketOpened) {
-        logError("socket is open. Can not send AT commands");
-        return "";
-    }
-
-    io->rxClear();
-    io->txClear();*/
-//    std::string result = "remove me";
-/*
-    //Attempt to write command
-    if(_parser.write(command.data(), command.size(), timeoutMillis) != command.size()) {
-        //Failed to write command
-        if (command != "AT" && command != "at") {
-            logError("failed to send command to radio within %d milliseconds", timeoutMillis);
+            logError("MTSBufferedIO not set");
+            return "";
         }
+        if(socketOpened) {
+            logError("socket is open. Can not send AT commands");
+            return "";
+        }
+    
+        io->rxClear();
+        io->txClear();
+*/
+    std::string result;
+
+    if (!_parser.send("%s", command.c_str())) {
+        debug1.printf("failed to send command <%s> to radio within %d milliseconds\r\n", command.c_str(), timeoutMillis);
         return "";
     }
-
-    //Send Escape Character
     if (esc != 0x00) {
-        if(io->write(esc, timeoutMillis) != 1) {
-            if (command != "AT" && command != "at") {
-                logError("failed to send character '%c' (0x%02X) to radio within %d milliseconds", esc, esc, timeoutMillis);
-            }
+        if (!_parser.send("%c", esc)) {
+            debug1.printf("failed to send character '%c' (0x%02X) to radio within %d milliseconds", esc, esc, timeoutMillis);
             return "";
         }
     }
+
     mbed::Timer tmr;
     char tmp[256];
     tmp[255] = 0;
     bool done = false;
     tmr.start();
     do {
-        //Make a non-blocking read call by passing timeout of zero
-        int size = io->read(tmp,255,0);    //1 less than allocated (timeout is instant)
+        //Make a non-blocking read call setting timeout to zero
+        _parser.setTimeout(0);        
+        int size = _parser.read(tmp,255);
         if(size > 0) {
             result.append(tmp, size);
         }
@@ -200,19 +234,19 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
                 }
         }
         
-        if(tmr.read_ms() >= timeoutMillis) {
+        if((tmr.read_ms() >= timeoutMillis) && !done) {
             if (command != "AT" && command != "at") {
-                logWarning("sendCommand [%s] timed out after %d milliseconds", command.c_str(), timeoutMillis);
+                debug1.printf("sendCommand [%s] timed out after %d milliseconds\r\n", command.c_str(), timeoutMillis);
             }
             done = true;
         }
     } while (!done);
-
-*/   
-/*    return result;
+   
+    return result;
 
 }
 
+/*
 static std::string getRegistrationNames(Registration registration){
     std::string result;
     return result;

@@ -148,7 +148,7 @@ public:
 	* carriage return (CR).  Does not append any character if esc == 0.
 	* @returns all data received from the radio after the command as a string.
 	*/
-//    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
+    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
 
     /** A method for sending a basic AT command to the radio. A basic AT command is
 	* one that simply has a response of either OK or ERROR without any other information.
@@ -160,7 +160,7 @@ public:
 	* carriage return (CR).
 	* @returns the standard Code enumeration.
 	*/
-//    virtual Code sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
+    virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
