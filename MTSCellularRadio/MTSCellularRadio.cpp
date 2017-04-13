@@ -36,12 +36,37 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         //
         
     // identify the radio
+    /* wait for radio to get into a good state */
+    while (true) {
+        _parser.send("AT\r\n");
+        if (_parser.recv("OK")) {
+            debug1.printf("radio replied\r\n");
+            break;
+        } else {
+            debug1.printf("waiting on radio...\r\n");
+        }
+        wait(1);
+    }
+
+/*    
     debug1.printf("creating MTSCelluarRadio object!\r\n");
-    char buffer[30];
+    char buffer[30] = "buffer";
     _parser.setTimeout(10);
-    _parser.send("ati");
-    _parser.read(buffer, 30);
-    debug1.printf("ati returns %s", buffer);
+    int size;
+    for(int i = 0; i < 5; i++){
+        debug1.printf(".");
+        _parser.send("ati\r\n");
+        size = _parser.read(buffer, 30);
+        if (size > 0)
+            break;
+        wait_ms(500);
+    }
+    debug1.printf("ati read %d characters. They are: %s\r\n", size, buffer);
+//    buffer[] = "buffer";
+    debug1.printf("Now the buffer contains: %s\r\n", buffer);
+    std::string text = "this is a string\r\n";
+    debug1.printf("the string = %s\r\n", text.c_str());
+*/    
 /*        && _parser.send("AT+CWMODE=%d", mode)
         && _parser.recv("OK")
         && _parser.send("AT+CIPMUX=1")
@@ -54,12 +79,13 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     // test to see if an AT command works
 }
 
-bool power(Power option);
+
+//bool power(Power option);
     
 /** Sets up the physical connection pins
 *   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
 */
-bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
+/*bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
     unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
 
 Code test(){
@@ -83,13 +109,13 @@ Code setDns(const std::string& primary, const std::string& secondary){
 }
 
 Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc)
-{
+{*/
 /*    if(socketOpened) {
         logError("socket is open. Can not send AT commands");
         return MTS_ERROR;
     }
 */
-    std::string response = sendCommand(command, timeoutMillis, esc);
+/*    std::string response = sendCommand(command, timeoutMillis, esc);
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
     } else if (response.find("OK") != string::npos) {
@@ -102,7 +128,7 @@ Code MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int
 }
 
 std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
-{
+{*/
 /*    if(io == NULL) {
         logError("MTSBufferedIO not set");
         return "";
@@ -114,7 +140,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
 
     io->rxClear();
     io->txClear();*/
-    std::string result = "remove me";
+//    std::string result = "remove me";
 /*
     //Attempt to write command
     if(_parser.write(command.data(), command.size(), timeoutMillis) != command.size()) {
@@ -183,7 +209,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     } while (!done);
 
 */   
-    return result;
+/*    return result;
 
 }
 
@@ -227,12 +253,12 @@ bool disconnect(){
 bool isConnected(){
     return true;
 }
-
+*/
 const char *MTSCellularRadio::getIPAddress(void)
 {
     return 0;
 }
-    
+/*    
 const char *MTSCellularRadio::getMACAddress(void){
     return 0;
 }
@@ -294,4 +320,4 @@ gpsData GPSgetPosition(){
 bool GPSgotFix(){
     return true;
 }
-
+*/

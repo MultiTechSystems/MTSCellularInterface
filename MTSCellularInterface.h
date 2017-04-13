@@ -19,7 +19,7 @@ public:
 	* Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
 	* Power on powers up the modem and verifies AT command response.
 	*/
-	virtual bool radioPower(Power option);
+//	virtual bool radioPower(Power option);
 
 
     /** Set the cellular network APN and credentials
@@ -62,14 +62,14 @@ public:
     /** Get the internally stored MAC address
      *  @return             MAC address of the interface
      */
-    virtual const char *get_mac_address();
+//    virtual const char *get_mac_address();
 
      /** Get the local gateway
      *
      *  @return         Null-terminated representation of the local gateway
      *                  or null if no network mask has been recieved
      */
-    virtual const char *get_gateway();
+//    virtual const char *get_gateway();
 
     /** Get the local network mask
      *
@@ -77,7 +77,7 @@ public:
      *                  or null if no network mask has been recieved
      */
      
-    virtual const char *get_netmask();
+//    virtual const char *get_netmask();
 
     /** Checks if the radio is connected to the cell network.
     * Checks antenna signal, cell tower registration, and context activation
@@ -87,18 +87,18 @@ public:
     * @returns true if there is a PPP connection to the cell network, false
     * if there is no PPP connection to the cell network.
     */
-    virtual bool isConnected();
+//    virtual bool isConnected();
 
     /** Resets the radio/modem.
     * Disconnects all active PPP and socket connections to do so.
     */
-    virtual void reset();
+//    virtual void reset();
 
     /** Pings specified DNS or IP address
      * Google DNS server used as default ping address
      * @returns true if ping received alive response else false
      */
-    virtual bool ping(const std::string& address = "8.8.8.8"); 	
+//    virtual bool ping(const std::string& address = "8.8.8.8"); 	
 	
     /** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.
@@ -107,7 +107,7 @@ public:
 	* @param message the text message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
+//    virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
 
     /** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.
@@ -115,21 +115,21 @@ public:
 	* @param sms an Sms struct that contains all SMS transaction information.
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code sendSMS(const Sms& sms);
+//    virtual Code sendSMS(const Sms& sms);
 
     /** This method retrieves all of the SMS messages currently available for
 	* this phone number.
 	*
 	* @returns a vector of existing SMS messages each as an Sms struct.
 	*/
-    virtual std::vector<Sms> getReceivedSms();
+//    virtual std::vector<Sms> getReceivedSms();
 
     /** This method can be used to remove/delete all received SMS messages
 	* even if they have never been retrieved or read.
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code deleteAllReceivedSms();
+//    virtual Code deleteAllReceivedSms();
 
     /** This method can be used to remove/delete all received SMS messages
 	* that have been retrieved by the user through the getReceivedSms method.
@@ -137,32 +137,32 @@ public:
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code deleteOnlyReceivedReadSms();	
+//    virtual Code deleteOnlyReceivedReadSms();	
 
     /** Enables GPS.
 	* @returns true if GPS is enabled, false if GPS is not supported.
 	*/
-    virtual bool GPSenable();
+//    virtual bool GPSenable();
 
     /** Disables GPS.
 	* @returns true if GPS is disabled, false if GPS does not disable.
 	*/
-    virtual bool GPSdisable();
+//    virtual bool GPSdisable();
 
     /** Checks if GPS is enabled.
 	* @returns true if GPS is enabled, false if GPS is disabled.
 	*/
-    virtual bool GPSenabled();
+//    virtual bool GPSenabled();
         
     /** Get GPS position.
 	* @returns a structure containing the GPS data field information.
 	*/
-    virtual gpsData GPSgetPosition();
+//    virtual gpsData GPSgetPosition();
 
     /** Check for GPS fix.
 	* @returns true if there is a fix and false otherwise.
 	*/
-    virtual bool GPSgotFix();	
+//    virtual bool GPSgotFix();	
 
 	/** Translates a hostname to an IP address with specific version
 	 *
@@ -178,14 +178,14 @@ public:
 	 *					version is chosen by the stack (defaults to NSAPI_UNSPEC)
 	 *	@return 		0 on success, negative error code on failure
 	 */
-	using NetworkInterface::gethostbyname;
+//	using NetworkInterface::gethostbyname;
 
 	/** Add a domain name server to list of servers to query
 	 *
 	 *	@param addr 	Destination for the host address
 	 *	@return 		0 on success, negative error code on failure
 	 */
-	using NetworkInterface::add_dns_server;
+//	using NetworkInterface::add_dns_server;
 
 protected:
 	/** Open a socket

@@ -16,68 +16,10 @@ const char CR	  = 0x0D;	//Carriage Return
 const char NL	  = 0x0A;	//Newline
 const char CTRL_Z = 0x1A;	//Control-Z
 
-/// An enumeration for common responses.
-enum Code {
-	MTS_SUCCESS, MTS_ERROR, MTS_FAILURE, MTS_NO_RESPONSE
-};
-
-// Enumeration for radio power.
-enum Power{
-	RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
-};
-
-/// Enumeration for different cellular radio types.
-enum Radio {
-	NA, MTSMC_H5, MTSMC_EV3, MTSMC_G3, MTSMC_C2, MTSMC_H5_IP, MTSMC_EV3_IP, MTSMC_C2_IP, MTSMC_LAT1, MTSMC_LVW2, MTSMC_LEU1
-};
-
-/// An enumeration of radio registration states with a cell tower.
-enum Registration {
-	NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
-};
-
-
-/** This structure contains the data for an SMS message.
-*/
-struct Sms {
-	/// Message Phone Number
-	std::string phoneNumber;
-	/// Message Body
-	std::string message;
-	/// Message Timestamp
-	std::string timestamp;
-};
-
-/** This structure contains the data for GPS position.
-*/
-struct gpsData {
-	bool success;
-	/// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
-	std::string latitude;
-	/// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
-	std::string longitude;
-	/// Horizontal Diluition of Precision.
-	float hdop;
-	/// Altitude - mean-sea-level (geoid) in meters.
-	float altitude;
-	/// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
-	int fix;
-	/// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
-	std::string cog;
-	/// Speed over ground (Km/hr).
-	float kmhr;
-	/// Speed over ground (knots).
-	float knots;
-	/// Total number of satellites in use.
-	int satellites;
-	/// Date and time in the format YY/MM/DD,HH:MM:SS.
-	std::string timestamp;
-};
-
 class MTSCellularRadio
 {
 public:
-	MTSCellularRadio(PinName Radio_tx, PinName Radio_rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
+	MTSCellularRadio(PinName tx, PinName rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
 		PinName Radio_dsr, PinName Radio_dtr, PinName Radio_ri, PinName Radio_Power, PinName Radio_Reset*/);
 
 	// Class ping paramter constants
@@ -93,19 +35,66 @@ public:
     enum Registration {
         NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
     };
-   
+
+	/// An enumeration for common responses.
+	enum Code {
+		MTS_SUCCESS, MTS_ERROR, MTS_FAILURE, MTS_NO_RESPONSE
+	};
+
+	// Enumeration for radio power.
+	enum Power{
+		RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
+	};
+
+	/** This structure contains the data for an SMS message.
+	*/
+	struct Sms {
+		/// Message Phone Number
+		std::string phoneNumber;
+		/// Message Body
+		std::string message;
+		/// Message Timestamp
+		std::string timestamp;
+	};
+
+	/** This structure contains the data for GPS position.
+	*/
+	struct gpsData {
+		bool success;
+		/// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
+		std::string latitude;
+		/// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
+		std::string longitude;
+		/// Horizontal Diluition of Precision.
+		float hdop;
+		/// Altitude - mean-sea-level (geoid) in meters.
+		float altitude;
+		/// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
+		int fix;
+		/// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
+		std::string cog;
+		/// Speed over ground (Km/hr).
+		float kmhr;
+		/// Speed over ground (knots).
+		float knots;
+		/// Total number of satellites in use.
+		int satellites;
+		/// Date and time in the format YY/MM/DD,HH:MM:SS.
+		std::string timestamp;
+	};   
+
     /** Controls radio power.
     	* Before power is removed, the connection must be brought down.
     	*
     	* @returns true if successful, false if a failure was detected.
     	*/
-    bool power(Power option);
+//    bool power(Power option);
     	
 	/** Sets up the physical connection pins
 	*   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
 	*/
-    bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
-    	unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
+//    bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
+//    	unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
 
     /** A method for testing command access to the radio.  This method sends the
 	* command "AT" to the radio, which is a standard radio test to see if you
@@ -114,7 +103,7 @@ public:
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code test();
+//    virtual Code test();
 
     /** A method for getting the signal strength of the radio. This method allows you to
 	* get a value that maps to signal strength in dBm. Here 0-1 is Poor, 2-9 is Marginal,
@@ -123,14 +112,14 @@ public:
 	*
 	* @returns an integer representing the signal strength.
 	*/
-    virtual int getSignalStrength();
+//    virtual int getSignalStrength();
 
     /** This method is used to check the registration state of the radio with the cell tower.
 	* If not appropriatley registered with the tower you cannot make a cellular connection.
 	*
 	* @returns the registration state as an enumeration type.
 	*/
-    virtual Registration getRegistration();
+//    virtual Registration getRegistration();
 
     /** This method is used to set the radios APN if using a SIM card. Note that the APN
 	* must be set correctly before you can make a data connection. The APN for your SIM
@@ -139,7 +128,7 @@ public:
 	* @param the APN as a string.
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code setApn(const std::string& apn);
+//    virtual Code setApn(const std::string& apn);
 
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
@@ -147,7 +136,7 @@ public:
 	* @param the DNS server address as a string in form xxx.xxx.xxx.xxx.
 	* @returns the standard AT Code enumeration.
 	*/
-    virtual Code setDns(const std::string& primary, const std::string& secondary = "0.0.0.0");
+//    virtual Code setDns(const std::string& primary, const std::string& secondary = "0.0.0.0");
 
     //Cellular Radio Specific
     /** A method for sending a generic AT command to the radio. Note that you cannot
@@ -159,7 +148,7 @@ public:
 	* carriage return (CR).  Does not append any character if esc == 0.
 	* @returns all data received from the radio after the command as a string.
 	*/
-    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
+//    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
 
     /** A method for sending a basic AT command to the radio. A basic AT command is
 	* one that simply has a response of either OK or ERROR without any other information.
@@ -171,7 +160,7 @@ public:
 	* carriage return (CR).
 	* @returns the standard Code enumeration.
 	*/
-    virtual Code sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
+//    virtual Code sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
@@ -179,7 +168,7 @@ public:
 	* @param code a Registration enumeration.
 	* @returns the enumeration name as a string.
 	*/
-    static std::string getRegistrationNames(Registration registration);
+//    static std::string getRegistrationNames(Registration registration);
 
     /** A static method for getting a string representation for the Radio
 	* enumeration.
@@ -187,29 +176,29 @@ public:
 	* @param type a Radio enumeration.
 	* @returns the enumeration name as a string.
 	*/
-    static std::string getRadioNames(Radio radio);
+//    static std::string getRadioNames(Radio radio);
     
     /** A method for changing the echo commands from radio.
 	* @param state Echo mode is off (an argument of 1 turns echos off, anything else turns echo on)
 	* @returns standard Code enumeration
 	*/
-    virtual Code echo(bool state);
+//    virtual Code echo(bool state);
 
 	/** Gets the device IP
 	* @returns string containing the IP address
 	*/
-	virtual std::string getDeviceIP();
+//	virtual std::string getDeviceIP();
 
 	/** Get the device IMEI or MEID (whichever is available)
 	* @returns string containing the IMEI for GSM, the MEID for CDMA, or an empty string
 	* if it failed to parse the number.
 	*/
-	std::string getEquipmentIdentifier();
+//	std::string getEquipmentIdentifier();
 
 	/** Get string representation of radio type
 	* @returns string containing the radio type (MTSMC-H5, etc)
 	*/
-	std::string getRadioType();
+//	std::string getRadioType();
 
 	/** PPP connect command.
 	* Connects the radio to the cellular network.
@@ -217,13 +206,13 @@ public:
 	* @returns true if PPP connection to the network succeeded,
 	* false if the PPP connection failed.
 	*/
-	virtual bool connect();
+//	virtual bool connect();
     
 	/** PPP disconnect command.
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
-	virtual bool disconnect();	    		
+//	virtual bool disconnect();	    		
 
 	/** Checks if the radio is connected to the cell network.
 	* Checks antenna signal, cell tower registration, and context activation
@@ -233,7 +222,7 @@ public:
 	* @returns true if there is a PPP connection to the cell network, false
 	* if there is no PPP connection to the cell network.
 	*/
-	virtual bool isConnected();
+//	virtual bool isConnected();
 
     /**
     * Get the IP address of ESP8266
@@ -247,27 +236,27 @@ public:
     *
     * @return null-terminated MAC address or null if no MAC address is assigned
     */
-    const char *getMACAddress(void);
+//    const char *getMACAddress(void);
 
      /** Get the local gateway
      *
      *  @return         Null-terminated representation of the local gateway
      *                  or null if no network mask has been recieved
      */
-    const char *getGateway();
+//    const char *getGateway();
 
     /** Get the local network mask
      *
      *  @return         Null-terminated representation of the local network mask 
      *                  or null if no network mask has been recieved
      */
-    const char *getNetmask();
+//    const char *getNetmask();
 	
 	/** Pings specified DNS or IP address
 	 * Google DNS server used as default ping address
 	 * @returns true if ping received alive response else false
 	 */
-	virtual bool ping(const std::string& address = "8.8.8.8");	
+//	virtual bool ping(const std::string& address = "8.8.8.8");	
 
 	/** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.
@@ -276,7 +265,7 @@ public:
 	* @param message the text message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-	virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
+//	virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
 
 	/** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.
@@ -284,21 +273,21 @@ public:
 	* @param sms an Sms struct that contains all SMS transaction information.
 	* @returns the standard AT Code enumeration.
 	*/
-	virtual Code sendSMS(const Sms& sms);
+//	virtual Code sendSMS(const Sms& sms);
 
 	/** This method retrieves all of the SMS messages currently available for
 	* this phone number.
 	*
 	* @returns a vector of existing SMS messages each as an Sms struct.
 	*/
-	virtual std::vector<Sms> getReceivedSms();
+//	virtual std::vector<Sms> getReceivedSms();
 
 	/** This method can be used to remove/delete all received SMS messages
 	* even if they have never been retrieved or read.
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-	virtual Code deleteAllReceivedSms();
+//	virtual Code deleteAllReceivedSms();
 
 	/** This method can be used to remove/delete all received SMS messages
 	* that have been retrieved by the user through the getReceivedSms method.
@@ -306,32 +295,32 @@ public:
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-	virtual Code deleteOnlyReceivedReadSms();	
+//	virtual Code deleteOnlyReceivedReadSms();	
 
 	/** Enables GPS.
 	* @returns true if GPS is enabled, false if GPS is not supported.
 	*/
-	virtual bool GPSenable();
+//	virtual bool GPSenable();
 
 	/** Disables GPS.
 	* @returns true if GPS is disabled, false if GPS does not disable.
 	*/
-	virtual bool GPSdisable();
+//	virtual bool GPSdisable();
 
 	/** Checks if GPS is enabled.
 	* @returns true if GPS is enabled, false if GPS is disabled.
 	*/
-	virtual bool GPSenabled();
+//	virtual bool GPSenabled();
 		
 	/** Get GPS position.
 	* @returns a structure containing the GPS data field information.
 	*/
-	virtual gpsData GPSgetPosition();
+//	virtual gpsData GPSgetPosition();
 
 	/** Check for GPS fix.
 	* @returns true if there is a fix and false otherwise.
 	*/
-	virtual bool GPSgotFix();	
+//	virtual bool GPSgotFix();	
 
 
 protected:
