@@ -3,7 +3,7 @@
  */
 
 #include "MTSCellularRadio.h"
-Serial debug1(USBTX, USBRX);
+#include "MTSLog.h"
 
 MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinName rts,
     PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
@@ -39,10 +39,10 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     while (true) {
         _parser.send("AT\r\n");
         if (_parser.recv("OK")) {
-            debug1.printf("radio replied\r\n");
+            logInfo("radio replied\r\n");
             break;
         } else {
-            debug1.printf("waiting on radio...\r\n");
+            logInfo("waiting on radio...\r\n");
         }
         wait(1);
     }
@@ -74,10 +74,10 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
             type = MTSCellularRadio::MTSMC_LEU1;
             mNumber = "LE910-EUG";
         } else {
-            debug1.printf("Determining radio type");
+            logInfo("Determining radio type");
         }
         if (type != MTSCellularRadio::NA) {
-            debug1.printf("radio model: %s", mNumber.c_str());
+            logInfo("radio model: %s", mNumber.c_str());
             break;
         }
         wait(1);
@@ -183,12 +183,12 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     std::string result;
 
     if (!_parser.send("%s", command.c_str())) {
-        debug1.printf("failed to send command <%s> to radio within %d milliseconds\r\n", command.c_str(), timeoutMillis);
+        logError("failed to send command <%s> to radio within %d milliseconds\r\n", command.c_str(), timeoutMillis);
         return "";
     }
     if (esc != 0x00) {
         if (!_parser.send("%c", esc)) {
-            debug1.printf("failed to send character '%c' (0x%02X) to radio within %d milliseconds", esc, esc, timeoutMillis);
+            logError("failed to send character '%c' (0x%02X) to radio within %d milliseconds", esc, esc, timeoutMillis);
             return "";
         }
     }
@@ -199,7 +199,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     bool done = false;
     tmr.start();
     do {
-        //Make a non-blocking read call setting timeout to zero
+        //Make a non-blocking read call... setting timeout to zero
         _parser.setTimeout(0);        
         int size = _parser.read(tmp,255);
         if(size > 0) {
@@ -236,7 +236,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
         
         if((tmr.read_ms() >= timeoutMillis) && !done) {
             if (command != "AT" && command != "at") {
-                debug1.printf("sendCommand [%s] timed out after %d milliseconds\r\n", command.c_str(), timeoutMillis);
+                logWarning("sendCommand [%s] timed out after %d milliseconds\r\n", command.c_str(), timeoutMillis);
             }
             done = true;
         }
