@@ -198,6 +198,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     tmp[255] = 0;
     bool done = false;
     tmr.start();
+    int commandSizeInResponse;    
     do {
         //Make a non-blocking read call... setting timeout to zero
         _parser.setTimeout(0);        
@@ -205,11 +206,17 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
         if(size > 0) {
             result.append(tmp, size);
         }
+
+        if (echoMode) {
+            commandSizeInResponse = command.size();            
+        } else {
+            commandSizeInResponse = 0;
+        }
         
         //Check for a response to signify the completion of the AT command
         //OK, ERROR, CONNECT are the 3 most likely responses
-        if(result.size() > (command.size() + 2)) {
-                if(result.find("OK\r\n",command.size()) != std::string::npos) {
+        if(result.size() > commandSizeInResponse + 2) {
+                if(result.find("OK\r\n", commandSizeInResponse) != std::string::npos) {
                     done = true;
                 } else if (result.find("ERROR") != std::string::npos) {
                     done = true;

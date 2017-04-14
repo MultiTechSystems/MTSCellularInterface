@@ -327,7 +327,6 @@ protected:
 	BufferedSerial _serial;
 	ATParser _parser;
 
-	std::string apn;		//APN setting for the radio. Access Point Name
     Radio type;				//The type of radio being used	
 
     bool echoMode; 			//Specifies if the echo mode is currently enabled.
