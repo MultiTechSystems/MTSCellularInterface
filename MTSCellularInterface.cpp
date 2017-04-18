@@ -27,6 +27,8 @@ int MTSCellularInterface::set_credentials(const char *apn, const char *username,
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
+    // call set credentials.
+    // call connect();
     return 0;
 }
     

@@ -143,24 +143,26 @@ public:
 	* send commands and have a data connection at the same time.
 	*
 	* @param command the command to send to the radio without the escape character.
+	* @param size of the command.
+	* @param buffer for the response. NOTE: Make sure this buffer is large enough to receive a response
+	*    that includes the echoed command (if echo is enabled) as well as all the CR/LF characters.
+	* @param size of the response buffer.
 	* @param timeoutMillis the time in millis to wait for a response before returning.
 	* @param esc escape character to add at the end of the command, defaults to
 	* carriage return (CR).  Does not append any character if esc == 0.
-	* @returns all data received from the radio after the command as a string.
-	*/
-    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
-
-    /** A method for sending a basic AT command to the radio. A basic AT command is
-	* one that simply has a response of either OK or ERROR without any other information.
-	* Note that you cannot send commands and have a data connection at the same time.
-	*
-	* @param command the command to send to the radio without the escape character.
-	* @param timeoutMillis the time in millis to wait for a response before returning.
-	* @param esc escape character to add at the end of the command, defaults to
-	* carriage return (CR).
 	* @returns the standard Code enumeration.
 	*/
-    virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis, char esc = CR);
+    virtual uint8_t sendCommand(const char *command, int command_size, char* response, int response_size,
+    	unsigned int timeoutMillis, char esc = CR);
+
+    /** A method for sending a basic AT command to the radio. A basic AT command is
+	* one that simply has a response of OK.
+	* Note that you cannot send commands and have a data connection at the same time.
+	*
+	* @param command the command to send to the radio.
+	* @returns the standard Code enumeration.
+	*/
+    virtual uint8_t sendBasicCommand(const char *command);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
