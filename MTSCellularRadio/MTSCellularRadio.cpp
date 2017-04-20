@@ -16,10 +16,6 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     //socketMode = TCP;
     socketOpened = false;
     socketCloseable = true;
-    local_port = 0;
-    local_address = "";
-    host_port = 0;
-    host_address = "";
     
 	radio_cts = NULL;
 	radio_rts = NULL;
@@ -30,6 +26,8 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     resetLine = NULL;
 
     _serial.baud(115200);
+
+    _parser.debugOn(1);
 
     // setup the battery circuit?
         //
@@ -48,38 +46,37 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     // identify the radio "ATI4" gets us the model (HE910, DE910, etc)
     const char command[] = "ATI4";
     char response[32];
-    std::string model;
-    std::string mNumber;
+    char mNumber[16];
     type = MTSCellularRadio::NA;
     while (true) {
-        sendCommand(command, (sizeof(command)/sizeof(*command)), response, (sizeof(response)/sizeof(*response)), 1000);
-        model = response;
-        if (model.find("HE910") != std::string::npos) {
+        sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+        if (strstr(response,"HE910")) {
             type = MTSCellularRadio::MTSMC_H5;
-            mNumber = "HE910";
-        } else if (model.find("DE910") != std::string::npos) {
+            strcpy(mNumber, "HE910");
+        } else if (strstr(response,"DE910")) {
             type = MTSCellularRadio::MTSMC_EV3;
-            mNumber = "DE910";
-        } else if (model.find("CE910") != std::string::npos) {
+            strcpy(mNumber, "DE910");
+        } else if (strstr(response,"CE910")) {
             type = MTSCellularRadio::MTSMC_C2;
-            mNumber = "CE910";
-        } else if (model.find("GE910") != std::string::npos) {
+            strcpy(mNumber, "CE910");
+        } else if (strstr(response,"GE910")) {
             type = MTSCellularRadio::MTSMC_G3;
-            mNumber = "GE910";
-        } else if (model.find("LE910-NAG") != std::string::npos) {
+            strcpy(mNumber, "GE910");
+        } else if (strstr(response,"LE910-NAG")) {
             type = MTSCellularRadio::MTSMC_LAT1;
-            mNumber = "LE910-NAG";
-        } else if (model.find("LE910-SVG") != std::string::npos) {
+            strcpy(mNumber, "LE910-NAG");
+        } else if (strstr(response,"LE910-SVG")) {
             type = MTSCellularRadio::MTSMC_LVW2;
-            mNumber = "LE910-SVG";
-        } else if (model.find("LE910-EUG") != std::string::npos) {
+            cid = 3;
+            strcpy(mNumber, "LE910-SVG");
+        } else if (strstr(response,"LE910-EUG")) {
             type = MTSCellularRadio::MTSMC_LEU1;
-            mNumber = "LE910-EUG";
+            strcpy(mNumber, "LE910-EUG");
         } else {
             logInfo("Determining radio type");
         }
         if (type != MTSCellularRadio::NA) {
-            logInfo("radio model: %s", mNumber.c_str());
+            logInfo("radio model: %s", mNumber);
             break;
         }
         wait(1);
@@ -102,15 +99,51 @@ Code test(){
 int getSignalStrength(){
     return 0;
 }
+*/
 
-Registration getRegistration(){
-    return REGISTERED;
+uint8_t MTSCellularRadio::getRegistration(){
+    const char command[] = "AT+CREG?";
+    char response[64];
+    char buf[8];
+    std::string reply;
+    sendCommand(command, (sizeof(command)/sizeof(*command)), response, (sizeof(response)/sizeof(*response)), 1000);
+    reply = response;
+    if (reply.find("OK") == string::npos) {
+        return UNKNOWN;
+    }
+    int start = reply.find(',');
+    int stop = reply.find(' ', start);
+    std::string regStat = reply.substr(start + 1, stop - start - 1);
+    int value;
+    sscanf(regStat.c_str(), "%d", &value);
+    switch (value) {
+        case 0:
+            return NOT_REGISTERED;
+        case 1:
+            return REGISTERED;
+        case 2:
+            return SEARCHING;
+        case 3:
+            return DENIED;
+        case 4:
+            return UNKNOWN;
+        case 5:
+            return ROAMING;
+    }
+    return UNKNOWN;
+
 }
 
-Code setApn(const std::string& apn){
-    return MTS_SUCCESS;
-}
 
+int MTSCellularRadio::pdpContext(const char* apn){
+    char command[64];
+    snprintf(command, sizeof(command), "AT+CGDCONT=%d,\"IP\",%s", cid, apn);
+    if (sendBasicCommand(command) == MTS_SUCCESS){
+        return NSAPI_ERROR_OK;
+    }
+    return NSAPI_ERROR_PARAMETER;
+}
+ /*
 Code setDns(const std::string& primary, const std::string& secondary){
     return MTS_SUCCESS;
 }
@@ -168,44 +201,133 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
 }
 
 /*
-static std::string getRegistrationNames(Registration registration){
+static std::string MTSCellularRadio::getRegistrationNames(Registration registration){
     std::string result;
     return result;
 }
 
-static std::string getRadioNames(Radio radio){
+static std::string MTSCellularRadio::getRadioNames(Radio radio){
     std::string result;
     return result;
 }
 
-Code echo(bool state){
+Code MTSCellularRadio::echo(bool state){
     return MTS_SUCCESS;
 }
 
-std::string getDeviceIP(){
+std::string MTSCellularRadio::getDeviceIP(){
     std::string result;
     return result;
 }
 
-std::string getEquipmentIdentifier(){
+std::string MTSCellularRadio::getEquipmentIdentifier(){
     std::string result;
     return result;
 }
 
-std::string getRadioType(){
+std::string MTSCellularRadio::getRadioType(){
     std::string result;
     return result;
 }
+*/
+bool MTSCellularRadio::connect(){
+    //Check if APN is not set, if it is not, connect will not work.
+    if (type == MTSMC_H5_IP || type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
+        if(sizeof(apn) == 0) {
+            logDebug("APN is not set");
+            return false;
+        }
+    }
 
-bool connect(){
+    //Check if already connected
+    if(isConnected()) {
+        return true;
+    }
+/*    
+    Timer tmr;
+    //Check Registration: AT+CREG? == 0,1
+    tmr.start();
+    do {
+        Registration registration = getRegistration();
+        if(registration != REGISTERED && registration != ROAMING) {
+            logTrace("Not Registered [%d] ... waiting", (int)registration);
+            wait(1);
+        } else {
+            break;
+        }
+    } while(tmr.read() < 30); 
+    
+    //Check RSSI: AT+CSQ
+    tmr.reset();
+    do {
+        int rssi = getSignalStrength();
+        logDebug("Signal strength: %d", rssi);
+        if(rssi == 99 || rssi == -1) {
+            logTrace("No Signal ... waiting");
+            wait(1);
+        } else {
+            break;
+        }
+    } while(tmr.read() < 30);
+
+    //Make PPP connection
+    if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
+        logDebug("Making PPP Connection Attempt. APN[%s]", apn.c_str());
+    } else {
+        logDebug("Making PPP Connection Attempt");
+    }
+    char buf[64];
+    snprintf(buf, sizeof(buf), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
+    std::string pppResult = sendCommand(string(buf), 15000);
+    std::vector<std::string> parts;
+    if(pppResult.find("OK") != std::string::npos) {
+        parts = Text::split(pppResult, "\r\n");
+        if(parts.size() >= 2) {
+            parts = Text::split(parts[1], " ");
+            if (parts.size() >= 2) {
+                local_address = parts[1];
+            }
+        }
+        logInfo("PPP Connection Established: IP[%s]", local_address.c_str());
+        pppConnected = true;
+
+    } else {
+        snprintf(buf, sizeof(buf), "%d,1", type == MTSMC_LVW2 ? 3 : 1);
+        pppResult = sendCommand("AT#SGACT?", 2000);
+        if(pppResult.find(string(buf)) != std::string::npos) {
+           logDebug("Radio is already connected");
+           pppConnected = true;
+        } else {
+            logError("PPP connection attempt failed");
+            pppConnected = false;
+        }
+    }
+
+    return pppConnected;
+    */
     return true;
 }
-
-bool disconnect(){
+/*
+bool MTSCellularRadio::disconnect(){
     return true;
 }
+*/
 
-bool isConnected(){
+bool MTSCellularRadio::isConnected(){
+    const char command[] = "AT#SGACT?";
+    char response[128];
+    char buf[8];
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+    snprintf(buf, sizeof(buf), "%d,1", type == MTSMC_LVW2 ? 3 : 1);
+    if (strstr(response, buf)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/*
+bool MTSCellularRadio::isConnected(){
     return true;
 }
 */

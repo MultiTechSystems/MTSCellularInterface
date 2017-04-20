@@ -98,7 +98,7 @@ public:
      * Google DNS server used as default ping address
      * @returns true if ping received alive response else false
      */
-//    virtual bool ping(const std::string& address = "8.8.8.8"); 	
+//    virtual bool ping(const char *address = "8.8.8.8"); 	
 	
     /** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.
@@ -107,7 +107,7 @@ public:
 	* @param message the text message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-//    virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
+//    virtual Code sendSMS(const char *phoneNumber, const char *message);
 
     /** This method is used to send an SMS message. Note that you cannot send an
 	* SMS message and have a data connection open at the same time.

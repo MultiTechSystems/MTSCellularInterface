@@ -2,7 +2,6 @@
 *
 */
 
-#include <string.h>
 #include "MTSCellularInterface.h"
 
 // Various timeouts for cellular radio operations
@@ -23,7 +22,7 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
 }
 */
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-    return 0;
+    return _radio.pdpContext(apn);
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
@@ -33,7 +32,7 @@ int MTSCellularInterface::connect(const char *apn, const char *username, const c
 }
     
 int MTSCellularInterface::connect(){
-    return 0;
+    return _radio.connect();
 }
      
 int MTSCellularInterface::disconnect(){
@@ -71,11 +70,11 @@ void MTSCellularInterface::reset(){
     return;
 }
 
-bool MTSCellularInterface::ping(const std::string& address){
+bool MTSCellularInterface::ping(const char *address){
     return true;
 } 	
 	
-Code MTSCellularInterface::sendSMS(const std::string& phoneNumber, const std::string& message){
+Code MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message){
     return MTS_SUCCESS;
 }
 

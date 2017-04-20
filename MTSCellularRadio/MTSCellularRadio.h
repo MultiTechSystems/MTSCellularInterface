@@ -6,8 +6,6 @@
 #define MTSCELLULARRADIO_H
 
 #include "ATParser.h"
-#include <string>
-#include <vector>
 
 //Special Payload Character Constants (ASCII Values)
 const char ETX	  = 0x03;	//Ends socket connection
@@ -50,11 +48,11 @@ public:
 	*/
 	struct Sms {
 		/// Message Phone Number
-		std::string phoneNumber;
+		char phoneNumber[32];
 		/// Message Body
-		std::string message;
+		char message[256];
 		/// Message Timestamp
-		std::string timestamp;
+		char timestamp[64];
 	};
 
 	/** This structure contains the data for GPS position.
@@ -62,9 +60,9 @@ public:
 	struct gpsData {
 		bool success;
 		/// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
-		std::string latitude;
+		char latitude[32];
 		/// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
-		std::string longitude;
+		char longitude[32];
 		/// Horizontal Diluition of Precision.
 		float hdop;
 		/// Altitude - mean-sea-level (geoid) in meters.
@@ -72,7 +70,7 @@ public:
 		/// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
 		int fix;
 		/// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
-		std::string cog;
+		char cog[32];
 		/// Speed over ground (Km/hr).
 		float kmhr;
 		/// Speed over ground (knots).
@@ -80,7 +78,7 @@ public:
 		/// Total number of satellites in use.
 		int satellites;
 		/// Date and time in the format YY/MM/DD,HH:MM:SS.
-		std::string timestamp;
+		char timestamp[32];
 	};   
 
     /** Controls radio power.
@@ -119,16 +117,16 @@ public:
 	*
 	* @returns the registration state as an enumeration type.
 	*/
-//    virtual Registration getRegistration();
+    virtual uint8_t getRegistration();
 
-    /** This method is used to set the radios APN if using a SIM card. Note that the APN
+    /** This method is used to configure the radio PDP context. Note that the APN
 	* must be set correctly before you can make a data connection. The APN for your SIM
 	* can be obtained by contacting your cellular service provider.
 	*
 	* @param the APN as a string.
-	* @returns the standard AT Code enumeration.
+	* @returns the nsapi_error code.
 	*/
-//    virtual Code setApn(const std::string& apn);
+    virtual int pdpContext(const char *apn);
 
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
@@ -208,13 +206,21 @@ public:
 	* @returns true if PPP connection to the network succeeded,
 	* false if the PPP connection failed.
 	*/
-//	virtual bool connect();
+	virtual bool connect();
     
 	/** PPP disconnect command.
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
 //	virtual bool disconnect();	    		
+
+    /** Checks if the radio is connected to the cell network.
+    * Checks context activation.
+    *
+    * @returns true if the context is activated, false
+    * if the context is deactivated..
+    */
+    virtual bool isConnected();
 
 	/** Checks if the radio is connected to the cell network.
 	* Checks antenna signal, cell tower registration, and context activation
@@ -329,7 +335,11 @@ protected:
 	BufferedSerial _serial;
 	ATParser _parser;
 
-    Radio type;				//The type of radio being used	
+    Radio type;				//The type of radio being used
+    uint8_t cid = 1;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    char apn[64]; 			//A string that holds the APN.
+    char apnUN[64];			//A string that holds the APN username.
+    char apnPW[64];			//A string that holds the APN password.
 
     bool echoMode; 			//Specifies if the echo mode is currently enabled.
     bool gpsEnabled;    	//true if GPS is enabled, else false.
@@ -337,10 +347,6 @@ protected:
     //Mode socketMode; 		//The current socket Mode.
     bool socketOpened; 		//Specifies if a Socket is presently opened.
     bool socketCloseable; 	//Specifies is a Socket can be closed.
-    unsigned int local_port; //Holds the local port for socket connections.
-    std::string local_address; //Holds the local address for socket connections.
-    unsigned int host_port; //Holds the remote port for socket connections.
-    std::string host_address; //Holds the remote address for socket connections.
     
 	DigitalIn* radio_cts;	//Maps to the radio's cts signal
 	DigitalOut* radio_rts;	//Maps to the radio's rts signal
