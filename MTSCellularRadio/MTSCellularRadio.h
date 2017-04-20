@@ -110,7 +110,7 @@ public:
 	*
 	* @returns an integer representing the signal strength.
 	*/
-//    virtual int getSignalStrength();
+    virtual int getSignalStrength();
 
     /** This method is used to check the registration state of the radio with the cell tower.
 	* If not appropriatley registered with the tower you cannot make a cellular connection.

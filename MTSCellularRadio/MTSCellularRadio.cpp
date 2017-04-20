@@ -27,7 +27,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 
     _serial.baud(115200);
 
-    _parser.debugOn(1);
+//    _parser.debugOn(1);
 
     // setup the battery circuit?
         //
@@ -95,15 +95,27 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 Code test(){
     return MTS_SUCCESS;
 }
-
-int getSignalStrength(){
-    return 0;
-}
 */
+
+int MTSCellularRadio::getSignalStrength(){
+    const char command[] = "AT+CSQ";
+    char response[32];
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+    if (!strstr(response, "OK")) {
+        return -1;
+    }
+    char * ptr;
+    ptr = strstr(response, "+CSQ:");
+        
+    int rssi, ber;
+    sscanf(ptr, "+CSQ: %d,%d", &rssi, &ber);
+    return rssi;
+}
+
 
 uint8_t MTSCellularRadio::getRegistration(){
     const char command[] = "AT+CREG?";
-    char response[64];
+    char response[32];
     char buf[8];
     sendCommand(command, sizeof(command), response, sizeof(response), 1000);
     char value = *(strchr(response, ',')+1);
@@ -248,7 +260,7 @@ bool MTSCellularRadio::connect(){
             break;
         }
     } while(tmr.read() < 30); 
-/*    
+    
     //Check RSSI: AT+CSQ
     tmr.reset();
     do {
@@ -262,6 +274,7 @@ bool MTSCellularRadio::connect(){
         }
     } while(tmr.read() < 30);
 
+/*
     //Make PPP connection
     if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
         logDebug("Making PPP Connection Attempt. APN[%s]", apn.c_str());
