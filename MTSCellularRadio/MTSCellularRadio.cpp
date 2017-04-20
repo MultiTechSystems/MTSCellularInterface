@@ -105,29 +105,21 @@ uint8_t MTSCellularRadio::getRegistration(){
     const char command[] = "AT+CREG?";
     char response[64];
     char buf[8];
-    std::string reply;
-    sendCommand(command, (sizeof(command)/sizeof(*command)), response, (sizeof(response)/sizeof(*response)), 1000);
-    reply = response;
-    if (reply.find("OK") == string::npos) {
-        return UNKNOWN;
-    }
-    int start = reply.find(',');
-    int stop = reply.find(' ', start);
-    std::string regStat = reply.substr(start + 1, stop - start - 1);
-    int value;
-    sscanf(regStat.c_str(), "%d", &value);
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+    char value = *(strchr(response, ',')+1);
+
     switch (value) {
-        case 0:
+        case '0':
             return NOT_REGISTERED;
-        case 1:
+        case '1':
             return REGISTERED;
-        case 2:
+        case '2':
             return SEARCHING;
-        case 3:
+        case '3':
             return DENIED;
-        case 4:
+        case '4':
             return UNKNOWN;
-        case 5:
+        case '5':
             return ROAMING;
     }
     return UNKNOWN;
@@ -243,12 +235,12 @@ bool MTSCellularRadio::connect(){
     if(isConnected()) {
         return true;
     }
-/*    
+    
     Timer tmr;
     //Check Registration: AT+CREG? == 0,1
     tmr.start();
     do {
-        Registration registration = getRegistration();
+        Registration registration = (Registration)getRegistration();
         if(registration != REGISTERED && registration != ROAMING) {
             logTrace("Not Registered [%d] ... waiting", (int)registration);
             wait(1);
@@ -256,7 +248,7 @@ bool MTSCellularRadio::connect(){
             break;
         }
     } while(tmr.read() < 30); 
-    
+/*    
     //Check RSSI: AT+CSQ
     tmr.reset();
     do {
