@@ -99,7 +99,7 @@ Code test(){
 
 int MTSCellularRadio::getSignalStrength(){
     const char command[] = "AT+CSQ";
-    char response[32];
+    char response[64];
     sendCommand(command, sizeof(command), response, sizeof(response), 1000);
     if (!strstr(response, "OK")) {
         return -1;
@@ -115,7 +115,7 @@ int MTSCellularRadio::getSignalStrength(){
 
 uint8_t MTSCellularRadio::getRegistration(){
     const char command[] = "AT+CREG?";
-    char response[32];
+    char response[64];
     char buf[8];
     sendCommand(command, sizeof(command), response, sizeof(response), 1000);
     char value = *(strchr(response, ',')+1);
@@ -183,7 +183,7 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         io->rxClear();
         io->txClear();
 */
-    _parser.setTimeout(timeoutMillis);
+    _parser.setTimeout(100);
 
     if (!_parser.send("%s", command)) {
         logError("failed to send command <%s> to radio within %d milliseconds\r\n", command, timeoutMillis);
@@ -196,8 +196,22 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         }
     }
 
-    int size = _parser.read(response, response_size);
-    if (size > 0) {
+    Timer tmr;
+    tmr.start();
+    int count = 0;
+    int c;
+    while(tmr.read_ms() < timeoutMillis) {
+        c = _parser.getc();
+        if (c > -1) {
+            response[count++] = (char)c;
+        }
+        if (count >= response_size) {
+            logWarning("%s response exceeds response size [%d]", command, response_size);
+            wait(1);
+            break;
+        }
+    }
+    if (count > 0) {
         return MTS_SUCCESS;
     }
     return MTS_FAILURE;
