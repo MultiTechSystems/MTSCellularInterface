@@ -245,7 +245,7 @@ int MTSCellularRadio::connect(){
 
     //Check if already connected
     if(isConnected()) {
-        return NSAPI_ERROR_OK;;
+        return NSAPI_ERROR_OK;
     }
     
     Timer tmr;
@@ -280,52 +280,34 @@ int MTSCellularRadio::connect(){
         }        
     } while(1);
 
-/*
-
     //Make PPP connection
     if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
         logDebug("Making PPP Connection Attempt. APN[%s]", apn);
     } else {
         logDebug("Making PPP Connection Attempt");
     }
-
+    //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
     char command[16];
     char response[64];
     snprintf(command, sizeof(command), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
-    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
-
-    
-    char buf[64];
-    snprintf(buf, sizeof(buf), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
-    std::string pppResult = sendCommand(string(buf), 15000);
-    std::vector<std::string> parts;
-    if(pppResult.find("OK") != std::string::npos) {
-        parts = Text::split(pppResult, "\r\n");
-        if(parts.size() >= 2) {
-            parts = Text::split(parts[1], " ");
-            if (parts.size() >= 2) {
-                local_address = parts[1];
-            }
-        }
-        logInfo("PPP Connection Established: IP[%s]", local_address.c_str());
-        pppConnected = true;
-
-    } else {
-        snprintf(buf, sizeof(buf), "%d,1", type == MTSMC_LVW2 ? 3 : 1);
-        pppResult = sendCommand("AT#SGACT?", 2000);
-        if(pppResult.find(string(buf)) != std::string::npos) {
-           logDebug("Radio is already connected");
-           pppConnected = true;
-        } else {
-            logError("PPP connection attempt failed");
-            pppConnected = false;
-        }
+    sendCommand(command, sizeof(command), response, sizeof(response), 10000);
+    if (!strstr(response, "OK")) {
+        return NSAPI_ERROR_NO_CONNECTION;
     }
+    char * ptr;
+    ptr = strstr(response, "#SGACT:");
+    if (ptr == NULL) {
+        return NSAPI_ERROR_NO_CONNECTION;
+    }
+    char ipAddr[16];
+    logInfo("AT#SGACT=1,1 response = %s", response);
+    logInfo("and ptr = %s", ptr);
+    sscanf(ptr, "#SGACT: %s", ipAddr);
 
-    return pppConnected;
-    */
+    logInfo("PPP Connection Established: IP[%s]", ipAddr);
     return NSAPI_ERROR_OK;
 }
+
 /*
 bool MTSCellularRadio::disconnect(){
     return true;
