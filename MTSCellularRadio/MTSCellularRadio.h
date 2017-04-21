@@ -206,7 +206,7 @@ public:
 	* @returns true if PPP connection to the network succeeded,
 	* false if the PPP connection failed.
 	*/
-	virtual bool connect();
+	virtual int connect();
     
 	/** PPP disconnect command.
 	* Disconnects from the PPP network, and will also close active socket

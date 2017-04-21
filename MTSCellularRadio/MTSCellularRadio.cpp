@@ -234,18 +234,18 @@ std::string MTSCellularRadio::getRadioType(){
     return result;
 }
 */
-bool MTSCellularRadio::connect(){
+int MTSCellularRadio::connect(){
     //Check if APN is not set, if it is not, connect will not work.
     if (type == MTSMC_H5_IP || type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
         if(sizeof(apn) == 0) {
             logDebug("APN is not set");
-            return false;
+            return NSAPI_ERROR_PARAMETER;
         }
     }
 
     //Check if already connected
     if(isConnected()) {
-        return true;
+        return NSAPI_ERROR_OK;;
     }
     
     Timer tmr;
@@ -253,34 +253,48 @@ bool MTSCellularRadio::connect(){
     tmr.start();
     do {
         Registration registration = (Registration)getRegistration();
-        if(registration != REGISTERED && registration != ROAMING) {
+        if (registration == REGISTERED || registration == ROAMING) {
+            break;
+        } else {
             logTrace("Not Registered [%d] ... waiting", (int)registration);
             wait(1);
-        } else {
-            break;
         }
-    } while(tmr.read() < 30); 
+        if (tmr.read() > 30) {
+            return NSAPI_ERROR_AUTH_FAILURE;
+        }
+    } while(1); 
     
     //Check RSSI: AT+CSQ
     tmr.reset();
     do {
         int rssi = getSignalStrength();
         logDebug("Signal strength: %d", rssi);
-        if(rssi == 99 || rssi == -1) {
+        if (rssi < 32 && rssi > 0) {
+            break;            
+        } else {
             logTrace("No Signal ... waiting");
             wait(1);
-        } else {
-            break;
         }
-    } while(tmr.read() < 30);
+        if (tmr.read() > 30) {
+            return NSAPI_ERROR_AUTH_FAILURE;
+        }        
+    } while(1);
 
 /*
+
     //Make PPP connection
     if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
-        logDebug("Making PPP Connection Attempt. APN[%s]", apn.c_str());
+        logDebug("Making PPP Connection Attempt. APN[%s]", apn);
     } else {
         logDebug("Making PPP Connection Attempt");
     }
+
+    char command[16];
+    char response[64];
+    snprintf(command, sizeof(command), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+
+    
     char buf[64];
     snprintf(buf, sizeof(buf), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
     std::string pppResult = sendCommand(string(buf), 15000);
@@ -310,7 +324,7 @@ bool MTSCellularRadio::connect(){
 
     return pppConnected;
     */
-    return true;
+    return NSAPI_ERROR_OK;
 }
 /*
 bool MTSCellularRadio::disconnect(){
