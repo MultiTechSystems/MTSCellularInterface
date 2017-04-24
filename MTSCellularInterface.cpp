@@ -26,9 +26,12 @@ int MTSCellularInterface::set_credentials(const char *apn, const char *username,
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
-    // call set credentials.
-    // call connect();
-    return 0;
+    int result;
+    result = _radio.pdpContext(apn);
+    if (result != NSAPI_ERROR_OK) {
+        return result;
+    }
+    return _radio.connect();
 }
     
 int MTSCellularInterface::connect(){
@@ -36,7 +39,7 @@ int MTSCellularInterface::connect(){
 }
      
 int MTSCellularInterface::disconnect(){
-    return 0;
+    return _radio.disconnect();
 }
 /*
 bool MTSCellularInterface::isConnected(){
@@ -117,20 +120,61 @@ bool MTSCellularInterface::GPSgotFix(){
     return true;    
 }	
 */
+
+struct cellular_socket {
+    int id;
+    nsapi_protocol_t proto;
+    bool connected;
+    SocketAddress addr;
+};
+
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
-    return 0;
+    // Look for an unused socket
+    int id = -1;
+ 
+    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++) {
+        if (!_ids[i]) {
+            id = i;
+            _ids[i] = true;
+            break;
+        }
+    }
+ 
+    if (id == -1) {
+        return NSAPI_ERROR_NO_SOCKET;
+    }
+    
+    struct cellular_socket *socket = new struct cellular_socket;
+    if (!socket) {
+        return NSAPI_ERROR_NO_SOCKET;
+    }
+    
+    socket->id = id;
+    socket->proto = proto;
+    socket->connected = false;
+    *handle = socket;
+    return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::socket_close(void *handle){
-    return 0;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    int err = NSAPI_ERROR_OK;
+ 
+    if (!_radio.close(socket->id)) {
+        err = NSAPI_ERROR_DEVICE_ERROR;
+    }
+
+    _ids[socket->id] = false;
+    delete socket;
+    return err;
 }
 
 int MTSCellularInterface::socket_bind(void *handle, const SocketAddress &address){
-    return 0;
+    return NSAPI_ERROR_UNSUPPORTED;
 }
 
 int MTSCellularInterface::socket_listen(void *handle, int backlog){
-    return 0;
+    return NSAPI_ERROR_UNSUPPORTED;
 }
 
 int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){

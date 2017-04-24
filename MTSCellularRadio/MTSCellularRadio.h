@@ -212,7 +212,7 @@ public:
 	* Disconnects from the PPP network, and will also close active socket
 	* connection if open. 
 	*/
-//	virtual bool disconnect();	    		
+	virtual int disconnect();	    		
 
     /** Checks if the radio is connected to the cell network.
     * Checks context activation.
@@ -221,16 +221,6 @@ public:
     * if the context is deactivated..
     */
     virtual bool isConnected();
-
-	/** Checks if the radio is connected to the cell network.
-	* Checks antenna signal, cell tower registration, and context activation
-	* before finally pinging (4 pings, 32 bytes each) to confirm PPP connection
-	* to network. Will return true if there is an open socket connection as well.
-	*
-	* @returns true if there is a PPP connection to the cell network, false
-	* if there is no PPP connection to the cell network.
-	*/
-//	virtual bool isConnected();
 
     /**
     * Get the IP address of ESP8266
@@ -259,6 +249,13 @@ public:
      *                  or null if no network mask has been recieved
      */
 //    const char *getNetmask();
+
+	/** Close a socket.
+	*
+	*@param id is the socket identifier.
+	*@returns true if the socket closed otherwise it returns false.
+	*/
+	bool close(int id);
 	
 	/** Pings specified DNS or IP address
 	 * Google DNS server used as default ping address

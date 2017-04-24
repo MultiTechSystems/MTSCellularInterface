@@ -8,6 +8,8 @@
 #include "mbed.h"
 #include "MTSCellularRadio.h"
 
+#define CELLULAR_SOCKET_COUNT 2
+
 class MTSCellularInterface : public NetworkStack, public CellularInterface
 {
 public:
@@ -38,7 +40,7 @@ public:
      *  @param password Optional password for your APN 
      *  @return         0 on success, negative error code on failure
      */
-    virtual int connect(const char *apn, const char *username, const char *password);
+    virtual int connect(const char *apn, const char *username = "", const char *password = "");
 	
 	/** PPP connect command.
 	* Connects the radio to the cellular network.
@@ -297,6 +299,7 @@ protected:
 
 private:
 	MTSCellularRadio _radio;
+    bool _ids[CELLULAR_SOCKET_COUNT];	
 };
 #endif //MTSCELLULARINTERFACE
 

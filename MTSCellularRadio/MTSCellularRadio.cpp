@@ -314,19 +314,16 @@ int MTSCellularRadio::connect(){
         return NSAPI_ERROR_NO_CONNECTION;
     }
     char ipAddr[16];
-    logInfo("AT#SGACT=1,1 response = %s", response);
-    logInfo("and ptr = %s", ptr);
     sscanf(ptr, "#SGACT: %s", ipAddr);
 
     logInfo("PPP Connection Established: IP[%s]", ipAddr);
     return NSAPI_ERROR_OK;
 }
 
-/*
-bool MTSCellularRadio::disconnect(){
-    return true;
+int MTSCellularRadio::disconnect(){
+    
+    return NSAPI_ERROR_OK;
 }
-*/
 
 bool MTSCellularRadio::isConnected(){
     const char command[] = "AT#SGACT?";
@@ -365,7 +362,22 @@ const char *MTSCellularRadio::getNetmask()
 {
     return 0;
 }
+*/
 
+bool MTSCellularRadio::close(int id)
+{
+    // TODO: check if the socket is open before trying to close it.
+    // #SS
+    
+    char command[64];
+    snprintf(command, sizeof(command), "AT+SH=%d", id);
+    if (sendBasicCommand(command) == MTS_SUCCESS){
+        return true;
+    }
+    return false;
+}
+
+/*
 bool ping(const std::string& address){
     return true;
 }
