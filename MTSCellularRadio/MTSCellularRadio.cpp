@@ -386,11 +386,23 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
         return false;
     }
 
-    char command[64];
-    memset(command, 0, sizeof(command));
-    char response[64];
+    char command[64] = "AT#SS";
+    char response[256];
     memset(response, 0, sizeof(response));
-    
+    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "#SS: %d", id);
+    char * ptr;
+    ptr = strstr(response, buf);
+    if (ptr) {
+        if (ptr[7] != '0') {
+            logInfo ("socket not closed, state = %c", ptr[7]);
+            return true;
+        }
+    }
+
+    memset(command, 0, sizeof(command));
+    memset(response, 0, sizeof(response));
     if (type == "TCP") {
         snprintf(command, sizeof(command), "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
     } else {
