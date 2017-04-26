@@ -8,8 +8,6 @@
 #include "mbed.h"
 #include "MTSCellularRadio.h"
 
-#define CELLULAR_SOCKET_COUNT 2
-
 class MTSCellularInterface : public NetworkStack, public CellularInterface
 {
 public:
@@ -299,7 +297,16 @@ protected:
 
 private:
 	MTSCellularRadio _radio;
-    bool _ids[CELLULAR_SOCKET_COUNT];	
+    bool _ids[CELLULAR_SOCKET_COUNT];
+
+    void event();
+
+	struct {
+		void (*callback)(void *);
+		void *data;
+	} _cbs[CELLULAR_SOCKET_COUNT];
+
+	
 };
 #endif //MTSCELLULARINTERFACE
 

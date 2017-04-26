@@ -116,7 +116,6 @@ int MTSCellularRadio::getSignalStrength(){
 uint8_t MTSCellularRadio::getRegistration(){
     const char command[] = "AT+CREG?";
     char response[64];
-    char buf[8];
     sendCommand(command, sizeof(command), response, sizeof(response), 1000);
     char value = *(strchr(response, ',')+1);
 
@@ -161,6 +160,9 @@ uint8_t MTSCellularRadio::sendBasicCommand(const char *command)
         return MTS_ERROR;
     }
 */
+    _parser.flush();
+    _parser.setTimeout(100);
+
     if (_parser.send(command) && _parser.recv("OK")) {
         return MTS_SUCCESS;
     }
@@ -183,15 +185,17 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         io->rxClear();
         io->txClear();
 */
+    _parser.flush();
     _parser.setTimeout(100);
+    logInfo("command= %s", command);
 
     if (!_parser.send("%s", command)) {
-        logError("failed to send command <%s> to radio within %d milliseconds\r\n", command, timeoutMillis);
+        logError("failed to send command <%s> to radio\r\n", command);
         return MTS_FAILURE;    
     }
     if (esc != 0x00) {
         if (!_parser.send("%c", esc)) {
-            logError("failed to send character '%c' (0x%02X) to radio within %d milliseconds", esc, esc, timeoutMillis);
+            logError("failed to send character '%c' (0x%02X) to radio\r\n", esc, esc);
             return MTS_FAILURE;
         }
     }
@@ -204,6 +208,10 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         c = _parser.getc();
         if (c > -1) {
             response[count++] = (char)c;
+            if ((strstr(response , "\r\nOK\r\n")) || (strstr(response , "\r\nERROR\r\n"))){
+    logInfo("response= %s", response);                
+                return count;
+            }
         }
         if (count >= response_size) {
             logWarning("%s response exceeds response size [%d]", command, response_size);
@@ -211,8 +219,9 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
             break;
         }
     }
+    logInfo("response= %s", response);
     if (count > 0) {
-        return MTS_SUCCESS;
+        return count;
     }
     return MTS_FAILURE;
     
@@ -321,7 +330,7 @@ int MTSCellularRadio::connect(){
 }
 
 int MTSCellularRadio::disconnect(){
-    
+    logInfo("disconnecting radio");
     return NSAPI_ERROR_OK;
 }
 
@@ -338,11 +347,6 @@ bool MTSCellularRadio::isConnected(){
     }
 }
 
-/*
-bool MTSCellularRadio::isConnected(){
-    return true;
-}
-*/
 const char *MTSCellularRadio::getIPAddress(void)
 {
     return 0;
@@ -364,6 +368,35 @@ const char *MTSCellularRadio::getNetmask()
 }
 */
 
+bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
+{
+    // TODO: check if the socket is already open before trying to open it.
+    logInfo("radio open");
+    if(id > CELLULAR_SOCKET_COUNT - 1) {
+        return false;
+    }
+
+    char command[64];
+    char response[64];
+    memset(response, 0, sizeof(response));
+    if (type == "TCP") {
+        snprintf(command, sizeof(command), "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
+    } else {
+        snprintf(command, sizeof(command), "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
+    }
+    if (sendCommand(command, sizeof(command), response, sizeof(response), 10000)) {
+        logInfo("open response1... ", response);
+        if (!strstr(response, "OK")) {
+            logInfo("open failed");
+            return false;
+        }
+    }
+    logInfo("open success");
+    logInfo("open response2... ", response);
+    return true;
+}
+
+
 bool MTSCellularRadio::close(int id)
 {
     // TODO: check if the socket is open before trying to close it.
@@ -371,7 +404,7 @@ bool MTSCellularRadio::close(int id)
     
     char command[64];
     snprintf(command, sizeof(command), "AT+SH=%d", id);
-    if (sendBasicCommand(command) == MTS_SUCCESS){
+    if (sendBasicCommand(command) == MTS_SUCCESS) {
         return true;
     }
     return false;

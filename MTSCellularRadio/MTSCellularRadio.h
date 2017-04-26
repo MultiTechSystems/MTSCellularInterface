@@ -14,6 +14,8 @@ const char CR	  = 0x0D;	//Carriage Return
 const char NL	  = 0x0A;	//Newline
 const char CTRL_Z = 0x1A;	//Control-Z
 
+#define CELLULAR_SOCKET_COUNT 2
+
 class MTSCellularRadio
 {
 public:
@@ -36,7 +38,7 @@ public:
 
 	/// An enumeration for common responses.
 	enum Code {
-		MTS_SUCCESS, MTS_ERROR, MTS_FAILURE, MTS_NO_RESPONSE
+		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3
 	};
 
 	// Enumeration for radio power.
@@ -230,6 +232,24 @@ public:
     const char *getIPAddress(void);
 
     /**
+    * Attach a function to call whenever network state has changed
+    *
+    * @param func A pointer to a void function, or 0 to set as none
+    */
+    void attach(Callback<void()> func);
+
+    /**
+    * Attach a function to call whenever network state has changed
+    *
+    * @param obj pointer to the object to call the member function on
+    * @param method pointer to the member function to call
+    */
+    template <typename T, typename M>
+    void attach(T *obj, M method) {
+        attach(Callback<void()>(obj, method));
+    }
+
+    /**
     * Get the MAC address of ESP8266
     *
     * @return null-terminated MAC address or null if no MAC address is assigned
@@ -250,10 +270,21 @@ public:
      */
 //    const char *getNetmask();
 
+    /**
+    * Open a socketed connection
+    *
+    * @param type the type of socket to open "UDP" or "TCP"
+    * @param id id to give the new socket, valid 0-4
+    * @param port port to open connection with
+    * @param addr the IP address of the destination
+    * @return true only if socket opened successfully
+    */
+    bool open(const char *type, int id, const char* addr, int port);
+
 	/** Close a socket.
 	*
-	*@param id is the socket identifier.
-	*@returns true if the socket closed otherwise it returns false.
+	*@param id is the socket to close.
+	*@return true if the socket closed successfully otherwise return false.
 	*/
 	bool close(int id);
 	

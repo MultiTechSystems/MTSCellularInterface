@@ -3,6 +3,7 @@
 */
 
 #include "MTSCellularInterface.h"
+#include "MTSLog.h"
 
 // Various timeouts for cellular radio operations
 #define CELL_RADIO_CONNECT_TIMEOUT 15000
@@ -15,6 +16,8 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
 	PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
 	: _radio(Radio_tx, Radio_rx/*, rts, cts, dcd, dsr, dtr, ri, power, reset*/)
 {
+    memset(_ids, 0, sizeof(_ids));
+    memset(_cbs, 0, sizeof(_cbs));
 }
 
 /*bool MTSCellularInterface::radioPower(Power option){
@@ -129,6 +132,7 @@ struct cellular_socket {
 };
 
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
+    logInfo("MTSCellularInterface socket_open called");    
     // Look for an unused socket
     int id = -1;
  
@@ -149,7 +153,7 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
         return NSAPI_ERROR_NO_SOCKET;
     }
     
-    socket->id = id;
+    socket->id = id+1;  // +1 the first telit socket available starts at 1.
     socket->proto = proto;
     socket->connected = false;
     *handle = socket;
@@ -157,6 +161,7 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
 }
 
 int MTSCellularInterface::socket_close(void *handle){
+    logInfo("MTSCellularInterface socket_close called");
     struct cellular_socket *socket = (struct cellular_socket *)handle;
     int err = NSAPI_ERROR_OK;
  
@@ -178,7 +183,18 @@ int MTSCellularInterface::socket_listen(void *handle, int backlog){
 }
 
 int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){
-    return 0;
+    logInfo("MTSCellularInterface socket_connect called");
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+
+    const char *proto = (socket->proto == NSAPI_UDP) ? "UDP" : "TCP";
+    if (!_radio.open(proto, socket->id, address.get_ip_address(), address.get_port())) {
+        logInfo("socket_connect error");
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    logInfo("socket_connect success");
+    
+    socket->connected = true;
+    return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddress *address){
@@ -202,5 +218,17 @@ int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, 
 }
 
 void MTSCellularInterface::socket_attach(void *handle, void (*callback)(void *), void *data){
-    return;
+    logInfo("MTSCellularInterface socket_attach called");    
+    struct cellular_socket *socket = (struct cellular_socket *)handle;    
+    _cbs[socket->id].callback = callback;
+    _cbs[socket->id].data = data;
 }
+
+void MTSCellularInterface::event() {
+    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++) {
+        if (_cbs[i].callback) {
+            _cbs[i].callback(_cbs[i].data);
+        }
+    }
+}
+
