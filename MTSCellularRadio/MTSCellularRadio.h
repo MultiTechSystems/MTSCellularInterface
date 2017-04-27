@@ -283,9 +283,19 @@ public:
     * @param socket id
     * @param socket data to send
     * @param amount of data
-    * @return true if data is sent successfully
+    * @return amount of data is sent successfully
     */
-	bool send(int id, const void *data, uint32_t amount);
+	int send(int id, const void *data, uint32_t amount);
+
+    /** Receive socket data
+    *
+    * @param socket id
+    * @param receive data buffer
+    * @param amount of space in buffer
+    * @return amount of data loaded into buffer
+    
+    */
+	int receive(int id, void *data, uint32_t amount);
 
 	/** Close a socket.
 	*

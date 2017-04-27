@@ -428,7 +428,7 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
     return true;
 }
 
-bool MTSCellularRadio::send(int id, const void *data, uint32_t amount)
+int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
     int responseSize = (amount < 32)? 32 : amount;
     responseSize += 8;
@@ -449,6 +449,31 @@ bool MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     }
 
     return false;
+}
+
+int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
+{
+    int responseSize = amount + 48;
+    char command[16];
+    char response[responseSize];
+    memset(command, 0, sizeof(command));
+    memset(response, 0, sizeof(response));
+
+    snprintf(command, sizeof(command), "AT#SRECV=%d,%d", id, amount);
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+    if (strstr(response, "\r\nERROR\r\n")){
+        logInfo("receive ERROR");
+        return 0;
+    }
+
+    char buf[16];
+    snprintf(buf, sizeof(buf), "#SRECV: %d", id);
+    char * ptr;
+    ptr = strstr(response, buf);
+    int connId, count;
+    sscanf(ptr, "#SRECV: %d,%d %s", &connId, &count, data);
+
+    return count;
 }
 
 bool MTSCellularRadio::close(int id)

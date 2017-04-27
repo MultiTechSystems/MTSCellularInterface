@@ -195,13 +195,16 @@ int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddre
 int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
-    _radio.send(socket->id, data, size);
-
-    return NSAPI_ERROR_OK;
+    if (_radio.send(socket->id, data, size)){
+        return size;
+    }
+    return NSAPI_ERROR_DEVICE_ERROR;
 }
 
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
-    return 0;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+
+    return _radio.receive(socket->id, data, size);
 }
 
 int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size){
