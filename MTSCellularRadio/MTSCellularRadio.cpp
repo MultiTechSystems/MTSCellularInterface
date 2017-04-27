@@ -178,18 +178,6 @@ int MTSCellularRadio::sendBasicCommand(const char *command)
 int MTSCellularRadio::sendCommand(const char *command, int command_size, char* response, int response_size,
     unsigned int timeoutMillis, char esc){
     
-/*    if(io == NULL) {
-            logError("MTSBufferedIO not set");
-            return "";
-        }
-        if(socketOpened) {
-            logError("socket is open. Can not send AT commands");
-            return "";
-        }
-    
-        io->rxClear();
-        io->txClear();
-*/
     _parser.setTimeout(200);
     _parser.flush();
 
@@ -272,7 +260,6 @@ int MTSCellularRadio::connect(){
         }
     }
 
-    //Check if already connected
     if(isConnected()) {
         return NSAPI_ERROR_OK;
     }
@@ -309,7 +296,7 @@ int MTSCellularRadio::connect(){
         }        
     } while(1);
 
-    //Make PPP connection
+    //Make cellular connection
     if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
         logDebug("Making PPP Connection Attempt. APN[%s]", apn);
     } else {
@@ -441,6 +428,28 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
     return true;
 }
 
+bool MTSCellularRadio::send(int id, const void *data, uint32_t amount)
+{
+    int responseSize = (amount < 32)? 32 : amount;
+    responseSize += 8;
+    char command[16];
+    char response[responseSize];
+    memset(command, 0, sizeof(command));
+    memset(response, 0, sizeof(response));
+
+    snprintf(command, sizeof(command), "AT#SSEND=%d", id);
+    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
+    if (strstr(response, "> ")){
+        memset(response, 0, sizeof(response));
+        sendCommand((const char*)data, amount, response, sizeof(response), 5000, CTRL_Z);
+    }
+
+    if (strstr(response, "OK")){
+        return true;
+    }
+
+    return false;
+}
 
 bool MTSCellularRadio::close(int id)
 {

@@ -15,53 +15,53 @@ public:
 		PinName Radio_dcd = NC,	PinName Radio_dsr = NC, PinName Radio_dtr = NC, PinName Radio_ri = NC,
 		PinName Radio_Power = NC, PinName Radio_Reset = NC*/);
 
-	/** Power the modem on or off.
-	* Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
-	* Power on powers up the modem and verifies AT command response.
-	*/
+    /** Power the modem on or off.
+    * Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
+    * Power on powers up the modem and verifies AT command response.
+    */
 //	virtual bool radioPower(Power option);
 
 
     /** Set the cellular network APN and credentials
-     *
-     *  @param apn      Optional name of the network to connect to
-     *  @param user     Optional username for the APN
-     *  @param pass     Optional password fot the APN
-     *  @return         0 on success, negative error code on failure
-     */
+    *
+    *  @param apn      Optional name of the network to connect to
+    *  @param user     Optional username for the APN
+    *  @param pass     Optional password fot the APN
+    *  @return         0 on success, negative error code on failure
+    */
     virtual int set_credentials(const char *apn, const char *username, const char *password);
 
-    /** Start the interface
-     *
-     *  @param apn      Optional name of the network to connect to
-     *  @param username Optional username for your APN
-     *  @param password Optional password for your APN 
-     *  @return         0 on success, negative error code on failure
-     */
+    /** Make cellular connection
+    *
+    *  @param apn      Optional name of the network to connect to
+    *  @param username Optional username for your APN
+    *  @param password Optional password for your APN 
+    *  @return         0 on success, negative error code on failure
+    */
     virtual int connect(const char *apn, const char *username = "", const char *password = "");
 	
-	/** PPP connect command.
-	* Connects the radio to the cellular network.
-	*
-	* @returns true if PPP connection to the network succeeded,
-	* false if the PPP connection failed.
-	*/
+    /** Make cellular connection
+    *
+    *  @return         0 on success, negative error code on failure
+    */
 	virtual int connect();
      
-	/** PPP disconnect command.
-	* Disconnects from the PPP network, and will also close active socket
-	* connection if open. 
-	*/
+    /** Cellular disconnect
+    *
+    *  @return         0 on success, negative error code on failure
+    */
 	virtual int disconnect();
 
     /** Get the internally stored IP address
-     *  @return             IP address of the interface or null if not yet connected
-     */
+    *
+    *  @return             IP address of the interface or null if not yet connected
+    */
     virtual const char *get_ip_address();
 
     /** Get the internally stored MAC address
-     *  @return             MAC address of the interface
-     */
+    *	
+    *  @return             MAC address of the interface
+    */
 //    virtual const char *get_mac_address();
 
      /** Get the local gateway

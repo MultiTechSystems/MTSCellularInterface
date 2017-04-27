@@ -8,10 +8,8 @@
 #include "ATParser.h"
 
 //Special Payload Character Constants (ASCII Values)
-const char ETX	  = 0x03;	//Ends socket connection
-const char DLE	  = 0x10;	//Escapes ETX and DLE within Payload
 const char CR	  = 0x0D;	//Carriage Return
-const char NL	  = 0x0A;	//Newline
+const char LF	  = 0x0A;	//Line Feed
 const char CTRL_Z = 0x1A;	//Control-Z
 
 #define CELLULAR_SOCKET_COUNT 2
@@ -270,8 +268,7 @@ public:
      */
 //    const char *getNetmask();
 
-    /**
-    * Open a socketed connection
+    /** Open a socketed connection
     *
     * @param type the type of socket to open "UDP" or "TCP"
     * @param id id to give the new socket, valid 0-4
@@ -280,6 +277,15 @@ public:
     * @return true only if socket opened successfully
     */
     bool open(const char *type, int id, const char* addr, int port);
+
+    /** Send socket data
+    *
+    * @param socket id
+    * @param socket data to send
+    * @param amount of data
+    * @return true if data is sent successfully
+    */
+	bool send(int id, const void *data, uint32_t amount);
 
 	/** Close a socket.
 	*

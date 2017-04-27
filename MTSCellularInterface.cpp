@@ -1,15 +1,9 @@
-/* Cellular radio implementation of NetworkInterface API
+/* MTSCellularInterface implementation of NetworkInterface API
 *
 */
 
 #include "MTSCellularInterface.h"
 #include "MTSLog.h"
-
-// Various timeouts for cellular radio operations
-#define CELL_RADIO_CONNECT_TIMEOUT 15000
-#define CELL_RADIO_SEND_TIMEOUT    500
-#define CELL_RADIO_RECV_TIMEOUT    0
-#define CELL_RADIO_MISC_TIMEOUT    500
 
 // MTSCellularInterface implementation
 MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*, PinName rts, PinName cts,
@@ -132,7 +126,6 @@ struct cellular_socket {
 };
 
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
-    logInfo("MTSCellularInterface socket_open called");    
     // Look for an unused socket
     int id = -1;
  
@@ -161,7 +154,6 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
 }
 
 int MTSCellularInterface::socket_close(void *handle){
-    logInfo("MTSCellularInterface socket_close called");
     struct cellular_socket *socket = (struct cellular_socket *)handle;
     int err = NSAPI_ERROR_OK;
  
@@ -183,7 +175,6 @@ int MTSCellularInterface::socket_listen(void *handle, int backlog){
 }
 
 int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){
-    logInfo("MTSCellularInterface socket_connect called");
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     const char *proto = (socket->proto == NSAPI_UDP) ? "UDP" : "TCP";
@@ -202,7 +193,11 @@ int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddre
 }
 
 int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
-    return 0;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+
+    _radio.send(socket->id, data, size);
+
+    return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
