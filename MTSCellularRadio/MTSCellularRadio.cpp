@@ -158,14 +158,14 @@ Code setDns(const std::string& primary, const std::string& secondary){
 */
 
 
-uint8_t MTSCellularRadio::sendBasicCommand(const char *command)
+int MTSCellularRadio::sendBasicCommand(const char *command)
 {
 /*    if(socketOpened) {
         logError("socket is open. Can not send AT commands");
         return MTS_ERROR;
     }
 */
-    _parser.setTimeout(100);
+    _parser.setTimeout(200);
     _parser.flush();
 
     if (_parser.send(command) && _parser.recv("OK")) {
@@ -175,7 +175,7 @@ uint8_t MTSCellularRadio::sendBasicCommand(const char *command)
 }
 
 
-uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, char* response, int response_size,
+int MTSCellularRadio::sendCommand(const char *command, int command_size, char* response, int response_size,
     unsigned int timeoutMillis, char esc){
     
 /*    if(io == NULL) {
@@ -190,10 +190,10 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         io->rxClear();
         io->txClear();
 */
-    _parser.setTimeout(100);
+    _parser.setTimeout(200);
     _parser.flush();
 
-    logInfo("command= %s", command);
+    logInfo("command = %s", command);
 
     if (!_parser.send("%s", command)) {
         logError("failed to send command <%s> to radio\r\n", command);
@@ -215,7 +215,7 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
         if (c > -1) {
             response[count++] = (char)c;
             if ((strstr(response , "\r\nOK\r\n")) || (strstr(response , "\r\nERROR\r\n"))){
-    logInfo("response= %s", response);
+    logInfo("response = %s", response);
                 return count;
             }
         }
@@ -225,7 +225,7 @@ uint8_t MTSCellularRadio::sendCommand(const char *command, int command_size, cha
             break;
         }
     }
-    logInfo("response= %s", response);
+    logInfo("response = %s", response);
     if (count > 0) {
         return count;
     }
@@ -338,7 +338,31 @@ int MTSCellularRadio::connect(){
 }
 
 int MTSCellularRadio::disconnect(){
-    logInfo("disconnecting radio");
+    if(!isConnected()) {
+        logInfo("already disconnected");
+        return NSAPI_ERROR_OK;
+    }
+
+    // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
+    char command[16];
+    memset(command, 0, sizeof(command));    
+    int sockId = 1;
+    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++){
+        snprintf(command, sizeof(command), "AT#SH=%d", sockId);        
+        sendBasicCommand(command);
+        sockId++;
+    }
+        
+    memset(command, 0, sizeof(command));
+    char response[64];
+    memset(response, 0, sizeof(response));
+    snprintf(command, sizeof(command), "AT#SGACT=%d,0", type == MTSMC_LVW2 ? 3 : 1);
+    sendCommand(command, sizeof(command), response, sizeof(response), 10000);
+    if (!strstr(response, "OK")) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    logInfo("disconnected");
+
     return NSAPI_ERROR_OK;
 }
 
@@ -381,7 +405,6 @@ const char *MTSCellularRadio::getNetmask()
 
 bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
-    // TODO: check if the socket is already open before trying to open it.
     if(id > CELLULAR_SOCKET_COUNT - 1) {
         return false;
     }
@@ -421,16 +444,28 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
 
 bool MTSCellularRadio::close(int id)
 {
-    // TODO: check if the socket is open before trying to close it.
-    // #SS
-    
-    char command[16];
+    char command[64];
     memset(command, 0, sizeof(command));
-    
-    snprintf(command, sizeof(command), "AT+SH=%d", id);
-    if (sendBasicCommand(command) == MTS_SUCCESS) {
-        return true;
+    char response[256];
+    snprintf(command, sizeof(command), "AT#SH=%d", id);
+    memset(response, 0, sizeof(response));
+    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+
+    snprintf(command, sizeof(command), "AT#SS");
+    memset(response, 0, sizeof(response));
+    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "#SS: %d", id);
+    char * ptr;
+    ptr = strstr(response, buf);
+    if (ptr) {
+        if (ptr[7] == '0') {
+            logInfo("socket closed");
+            return true;
+        }
     }
+
+    logInfo("socket close failed");
     return false;
 }
 

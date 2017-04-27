@@ -152,7 +152,7 @@ public:
 	* carriage return (CR).  Does not append any character if esc == 0.
 	* @returns the standard Code enumeration.
 	*/
-    virtual uint8_t sendCommand(const char *command, int command_size, char* response, int response_size,
+    virtual int sendCommand(const char *command, int command_size, char* response, int response_size,
     	unsigned int timeoutMillis, char esc = CR);
 
     /** A method for sending a basic AT command to the radio. A basic AT command is
@@ -162,7 +162,7 @@ public:
 	* @param command the command to send to the radio.
 	* @returns the standard Code enumeration.
 	*/
-    virtual uint8_t sendBasicCommand(const char *command);
+    virtual int sendBasicCommand(const char *command);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
