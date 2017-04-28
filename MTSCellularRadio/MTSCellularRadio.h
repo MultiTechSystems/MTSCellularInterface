@@ -20,10 +20,6 @@ public:
 	MTSCellularRadio(PinName tx, PinName rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
 		PinName Radio_dsr, PinName Radio_dtr, PinName Radio_ri, PinName Radio_Power, PinName Radio_Reset*/);
 
-	// Class ping paramter constants
-    static const unsigned int PINGDELAY = 3;	//Time to wait on each ping for a response before timimg out (seconds)
-    static const unsigned int PINGNUM = 4;		//Number of pings to try on ping command
-
     /// Enumeration for different cellular radio types.
     enum Radio {
         NA, MTSMC_H5, MTSMC_EV3, MTSMC_G3, MTSMC_C2, MTSMC_H5_IP, MTSMC_EV3_IP, MTSMC_C2_IP, MTSMC_LAT1, MTSMC_LVW2, MTSMC_LEU1
@@ -119,12 +115,12 @@ public:
 	*/
     virtual uint8_t getRegistration();
 
-    /** This method is used to configure the radio PDP context. Note that the APN
-	* must be set correctly before you can make a data connection. The APN for your SIM
+    /** This method is used to configure the radio PDP context. Some radio models require
+    * the APN be set correctly before it can make a data connection. The APN for your SIM
 	* can be obtained by contacting your cellular service provider.
 	*
 	* @param the APN as a string.
-	* @returns the nsapi_error code.
+	* @returns 0 on success, a negative value upon failure.
 	*/
     virtual int pdpContext(const char *apn);
 
@@ -136,31 +132,31 @@ public:
 	*/
 //    virtual Code setDns(const std::string& primary, const std::string& secondary = "0.0.0.0");
 
-    //Cellular Radio Specific
-    /** A method for sending a generic AT command to the radio. Note that you cannot
-	* send commands and have a data connection at the same time.
+    /** A method for sending a basic AT command to the radio. A basic AT command is
+	* one that simply has a response of OK.
 	*
-	* @param command the command to send to the radio without the escape character.
+	* @param the command to send to the radio.
+	* @returns 0 for success or a negative number for a failure.
+	*/
+    virtual int sendBasicCommand(const char *command);
+	
+    //Cellular Radio Specific
+    /** A method for sending a generic AT command to the radio.
+	*
+	* @param command to send to the radio.
 	* @param size of the command.
-	* @param buffer for the response. NOTE: Make sure this buffer is large enough to receive a response
-	*    that includes the echoed command (if echo is enabled) as well as all the CR/LF characters.
+	* @param buffer for the response. NOTE: Make sure this buffer is large enough to receive
+	*   a response that includes the echoed command as well as all the CR/LF characters.
 	* @param size of the response buffer.
-	* @param timeoutMillis the time in millis to wait for a response before returning.
+	* @param timeoutMillis the time in millis to wait for a response before returning. If
+	*   OK or ERROR are detected in the response the timer is short circuited.
 	* @param esc escape character to add at the end of the command, defaults to
-	* carriage return (CR).  Does not append any character if esc == 0.
-	* @returns the standard Code enumeration.
+	*   carriage return (CR).  Does not append any character if esc == 0.
+	* @returns the number of characters loaded in the response buffer or a negative
+	*   value upon failure.
 	*/
     virtual int sendCommand(const char *command, int command_size, char* response, int response_size,
     	unsigned int timeoutMillis, char esc = CR);
-
-    /** A method for sending a basic AT command to the radio. A basic AT command is
-	* one that simply has a response of OK.
-	* Note that you cannot send commands and have a data connection at the same time.
-	*
-	* @param command the command to send to the radio.
-	* @returns the standard Code enumeration.
-	*/
-    virtual int sendBasicCommand(const char *command);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
@@ -200,30 +196,28 @@ public:
 	*/
 //	std::string getRadioType();
 
-	/** PPP connect command.
-	* Connects the radio to the cellular network.
+	/** Cellular connect / context activation.
 	*
-	* @returns true if PPP connection to the network succeeded,
-	* false if the PPP connection failed.
+	* @returns 0 on connection success, else a negative value.
 	*/
 	virtual int connect();
     
-	/** PPP disconnect command.
-	* Disconnects from the PPP network, and will also close active socket
-	* connection if open. 
-	*/
+    /** Cellular disconnect / context deactivation.	
+    * Closes any and all sockets before disconnect
+    *
+	* @returns 0 on disconnect success, else a negative value.
+    */
 	virtual int disconnect();	    		
 
     /** Checks if the radio is connected to the cell network.
     * Checks context activation.
     *
-    * @returns true if the context is activated, false
-    * if the context is deactivated..
+    * @returns true connected, false if disconnected.
     */
     virtual bool isConnected();
 
     /**
-    * Get the IP address of ESP8266
+    * Get the radio's IP address
     *
     * @return null-teriminated IP address or null if no IP address is assigned
     */

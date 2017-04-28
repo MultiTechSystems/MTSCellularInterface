@@ -160,11 +160,6 @@ Code setDns(const std::string& primary, const std::string& secondary){
 
 int MTSCellularRadio::sendBasicCommand(const char *command)
 {
-/*    if(socketOpened) {
-        logError("socket is open. Can not send AT commands");
-        return MTS_ERROR;
-    }
-*/
     _parser.setTimeout(200);
     _parser.flush();
 
@@ -325,6 +320,7 @@ int MTSCellularRadio::connect(){
 }
 
 int MTSCellularRadio::disconnect(){
+    logInfo("disconnecting");
     if(!isConnected()) {
         logInfo("already disconnected");
         return NSAPI_ERROR_OK;
@@ -339,7 +335,9 @@ int MTSCellularRadio::disconnect(){
         sendBasicCommand(command);
         sockId++;
     }
-        
+
+    logInfo("sockets closed");
+    
     memset(command, 0, sizeof(command));
     char response[64];
     memset(response, 0, sizeof(response));
@@ -396,6 +394,7 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
         return false;
     }
 
+    // Check socket status... closed or not.
     char command[64] = "AT#SS";
     char response[256];
     memset(response, 0, sizeof(response));
