@@ -10,12 +10,12 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     : _serial(tx, rx, 1024), _parser(_serial)
 {
 
-    echoMode = true;
-    gpsEnabled = false;
-    pppConnected = false;
-    //socketMode = TCP;
-    socketOpened = false;
-    socketCloseable = true;
+    _echoMode = true;
+    _gpsEnabled = false;
+    _pppConnected = false;
+    //_socketMode = TCP;
+    _socketOpened = false;
+    _socketCloseable = true;
     
 	radio_cts = NULL;
 	radio_rts = NULL;
@@ -50,35 +50,35 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     char mNumber[16];
     memset(mNumber, 0, sizeof(mNumber));
     
-    type = MTSCellularRadio::NA;
+    _type = MTSCellularRadio::NA;
     while (true) {
         sendCommand(command, sizeof(command), response, sizeof(response), 1000);
         if (strstr(response,"HE910")) {
-            type = MTSCellularRadio::MTSMC_H5;
+            _type = MTSCellularRadio::MTSMC_H5;
             strcpy(mNumber, "HE910");
         } else if (strstr(response,"DE910")) {
-            type = MTSCellularRadio::MTSMC_EV3;
+            _type = MTSCellularRadio::MTSMC_EV3;
             strcpy(mNumber, "DE910");
         } else if (strstr(response,"CE910")) {
-            type = MTSCellularRadio::MTSMC_C2;
+            _type = MTSCellularRadio::MTSMC_C2;
             strcpy(mNumber, "CE910");
         } else if (strstr(response,"GE910")) {
-            type = MTSCellularRadio::MTSMC_G3;
+            _type = MTSCellularRadio::MTSMC_G3;
             strcpy(mNumber, "GE910");
         } else if (strstr(response,"LE910-NAG")) {
-            type = MTSCellularRadio::MTSMC_LAT1;
+            _type = MTSCellularRadio::MTSMC_LAT1;
             strcpy(mNumber, "LE910-NAG");
         } else if (strstr(response,"LE910-SVG")) {
-            type = MTSCellularRadio::MTSMC_LVW2;
-            cid = 3;
+            _type = MTSCellularRadio::MTSMC_LVW2;
+            _cid = 3;
             strcpy(mNumber, "LE910-SVG");
         } else if (strstr(response,"LE910-EUG")) {
-            type = MTSCellularRadio::MTSMC_LEU1;
+            _type = MTSCellularRadio::MTSMC_LEU1;
             strcpy(mNumber, "LE910-EUG");
         } else {
             logInfo("Determining radio type");
         }
-        if (type != MTSCellularRadio::NA) {
+        if (_type != MTSCellularRadio::NA) {
             logInfo("radio model: %s", mNumber);
             break;
         }
@@ -136,7 +136,8 @@ int MTSCellularRadio::getRegistration(){
 
 int MTSCellularRadio::pdpContext(const char* apn){
     char command[64];
-    snprintf(command, sizeof(command), "AT+CGDCONT=%d,\"IP\",%s", cid, apn);
+    strncpy(_apn, apn, strlen(apn));
+    snprintf(command, sizeof(command), "AT+CGDCONT=%d,\"IP\",%s", _cid, apn);
     if (sendBasicCommand(command) == MTS_SUCCESS){
         return NSAPI_ERROR_OK;
     }
@@ -239,8 +240,8 @@ std::string MTSCellularRadio::getRadioType(){
 */
 int MTSCellularRadio::connect(){
     //Check if APN is not set, if it is not, connect will not work.
-    if (type == MTSMC_H5_IP || type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
-        if(sizeof(apn) == 0) {
+    if (_type == MTSMC_H5_IP || _type == MTSMC_H5 || _type == MTSMC_G3 || _type == MTSMC_LAT1 || _type == MTSMC_LEU1) {
+        if(sizeof(_apn) == 0) {
             logDebug("APN is not set");
             return NSAPI_ERROR_PARAMETER;
         }
@@ -283,8 +284,8 @@ int MTSCellularRadio::connect(){
     } while(1);
 
     //Make cellular connection
-    if (type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
-        logDebug("Making PPP Connection Attempt. APN[%s]", apn);
+    if (_type == MTSMC_H5 || _type == MTSMC_G3 || _type == MTSMC_LAT1 || _type == MTSMC_LEU1) {
+        logDebug("Making PPP Connection Attempt. APN[%s]", _apn);
     } else {
         logDebug("Making PPP Connection Attempt");
     }
@@ -293,7 +294,7 @@ int MTSCellularRadio::connect(){
     memset(command, 0, sizeof(command));
     char response[64];
     memset(response, 0, sizeof(response));
-    snprintf(command, sizeof(command), "AT#SGACT=%d,1", type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(command, sizeof(command), "AT#SGACT=%d,1", _type == MTSMC_LVW2 ? 3 : 1);
     sendCommand(command, sizeof(command), response, sizeof(response), 10000);
     if (!strstr(response, "OK")) {
         return NSAPI_ERROR_NO_CONNECTION;
@@ -331,7 +332,7 @@ int MTSCellularRadio::disconnect(){
     memset(command, 0, sizeof(command));
     char response[64];
     memset(response, 0, sizeof(response));
-    snprintf(command, sizeof(command), "AT#SGACT=%d,0", type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(command, sizeof(command), "AT#SGACT=%d,0", _type == MTSMC_LVW2 ? 3 : 1);
     sendCommand(command, sizeof(command), response, sizeof(response), 10000);
     if (!strstr(response, "OK")) {
         return NSAPI_ERROR_DEVICE_ERROR;
@@ -349,7 +350,7 @@ bool MTSCellularRadio::isConnected(){
     memset(buf, 0, sizeof(buf));
     
     sendCommand(command, sizeof(command), response, sizeof(response), 1000);
-    snprintf(buf, sizeof(buf), "%d,1", type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(buf, sizeof(buf), "%d,1", _type == MTSMC_LVW2 ? 3 : 1);
     if (strstr(response, buf)) {
         return true;
     } else {

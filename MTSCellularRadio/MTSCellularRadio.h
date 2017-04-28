@@ -373,18 +373,18 @@ protected:
 	BufferedSerial _serial;
 	ATParser _parser;
 
-    Radio type;				//The type of radio being used
-    uint8_t cid = 1;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
-    char apn[64]; 			//A string that holds the APN.
-    char apnUN[64];			//A string that holds the APN username.
-    char apnPW[64];			//A string that holds the APN password.
+    Radio _type;				//The type of radio being used
+    uint8_t _cid = 1;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    char _apn[64]; 			//A string that holds the APN.
+    char _apnUN[64];			//A string that holds the APN username.
+    char _apnPW[64];			//A string that holds the APN password.
 
-    bool echoMode; 			//Specifies if the echo mode is currently enabled.
-    bool gpsEnabled;    	//true if GPS is enabled, else false.
-    bool pppConnected; 		//Specifies if a PPP session is currently connected.
+    bool _echoMode; 			//Specifies if the echo mode is currently enabled.
+    bool _gpsEnabled;    	//true if GPS is enabled, else false.
+    bool _pppConnected; 		//Specifies if a PPP session is currently connected.
     //Mode socketMode; 		//The current socket Mode.
-    bool socketOpened; 		//Specifies if a Socket is presently opened.
-    bool socketCloseable; 	//Specifies is a Socket can be closed.
+    bool _socketOpened; 		//Specifies if a Socket is presently opened.
+    bool _socketCloseable; 	//Specifies is a Socket can be closed.
     
 	DigitalIn* radio_cts;	//Maps to the radio's cts signal
 	DigitalOut* radio_rts;	//Maps to the radio's rts signal
