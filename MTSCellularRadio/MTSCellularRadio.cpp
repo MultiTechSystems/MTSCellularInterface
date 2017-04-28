@@ -105,41 +105,32 @@ int MTSCellularRadio::getSignalStrength(){
     char response[64];
     memset(response, 0, sizeof(response));
     sendCommand(command, sizeof(command), response, sizeof(response), 2000);
-    if (!strstr(response, "OK")) {
-        return -1;
-    }
+
     char * ptr;
     ptr = strstr(response, "+CSQ:");
-        
+    if (!ptr) {
+        return -1;
+    }        
     int rssi, ber;
     sscanf(ptr, "+CSQ: %d,%d", &rssi, &ber);
     return rssi;
 }
 
 
-uint8_t MTSCellularRadio::getRegistration(){
+int MTSCellularRadio::getRegistration(){
     const char command[] = "AT+CREG?";
     char response[64];
     memset(response, 0, sizeof(response));
+
     sendCommand(command, sizeof(command), response, sizeof(response), 2000);
-    char value = *(strchr(response, ',')+1);
-
-    switch (value) {
-        case '0':
-            return NOT_REGISTERED;
-        case '1':
-            return REGISTERED;
-        case '2':
-            return SEARCHING;
-        case '3':
-            return DENIED;
-        case '4':
-            return UNKNOWN;
-        case '5':
-            return ROAMING;
-    }
-    return UNKNOWN;
-
+    char * ptr;
+    ptr = strstr(response, "REG:");
+    if (!ptr) {
+        return -1;
+    }         
+    int mode, registration;
+    sscanf(ptr, "REG: %d,%d", &mode, &registration);
+    return registration;
 }
 
 

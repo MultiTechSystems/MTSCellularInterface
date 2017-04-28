@@ -104,16 +104,16 @@ public:
 	* 10-14 is Ok, 15-19 is Good, and 20+ is Excellent.  If you get a result of 99 the
 	* signal strength is not known or not detectable.
 	*
-	* @returns an integer representing the signal strength.
+	* @returns an integer representing the signal strength or -1 if command fails.
 	*/
     virtual int getSignalStrength();
 
     /** This method is used to check the registration state of the radio with the cell tower.
 	* If not appropriatley registered with the tower you cannot make a cellular connection.
 	*
-	* @returns the registration state as an enumeration type.
+	* @returns the registration state as an enumeration type or -1 if the command fails.
 	*/
-    virtual uint8_t getRegistration();
+    virtual int getRegistration();
 
     /** This method is used to configure the radio PDP context. Some radio models require
     * the APN be set correctly before it can make a data connection. The APN for your SIM
