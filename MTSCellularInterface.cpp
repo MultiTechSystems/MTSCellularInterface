@@ -129,7 +129,7 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     // Look for an unused socket
     int id = -1;
  
-    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++) {
+    for (int i = 1; i <= MAX_SOCKET_COUNT; i++) {
         if (!_ids[i]) {
             id = i;
             _ids[i] = true;
@@ -146,7 +146,7 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
         return NSAPI_ERROR_NO_SOCKET;
     }
     
-    socket->id = id+1;  // +1 the first telit socket available starts at 1.
+    socket->id = id;
     socket->proto = proto;
     socket->connected = false;
     *handle = socket;
@@ -223,7 +223,7 @@ void MTSCellularInterface::socket_attach(void *handle, void (*callback)(void *),
 }
 
 void MTSCellularInterface::event() {
-    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++) {
+    for (int i = 1; i <= MAX_SOCKET_COUNT; i++) {
         if (_cbs[i].callback) {
             _cbs[i].callback(_cbs[i].data);
         }

@@ -329,8 +329,7 @@ int MTSCellularRadio::disconnect(){
     // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
     char command[16];
     memset(command, 0, sizeof(command));    
-    int sockId = 1;
-    for (int i = 0; i < CELLULAR_SOCKET_COUNT; i++){
+    for (int sockId = 1; sockId <= MAX_SOCKET_COUNT; sockId++){
         snprintf(command, sizeof(command), "AT#SH=%d", sockId);        
         sendBasicCommand(command);
         sockId++;
@@ -390,7 +389,7 @@ const char *MTSCellularRadio::getNetmask()
 
 bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
-    if(id > CELLULAR_SOCKET_COUNT - 1) {
+    if(id > MAX_SOCKET_COUNT) {
         return false;
     }
 

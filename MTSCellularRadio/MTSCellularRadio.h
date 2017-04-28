@@ -12,7 +12,7 @@ const char CR	  = 0x0D;	//Carriage Return
 const char LF	  = 0x0A;	//Line Feed
 const char CTRL_Z = 0x1A;	//Control-Z
 
-#define CELLULAR_SOCKET_COUNT 2
+#define MAX_SOCKET_COUNT 2
 
 class MTSCellularRadio
 {

@@ -24,16 +24,16 @@ public:
 
     /** Set the cellular network APN and credentials
     *
-    *  @param apn      Optional name of the network to connect to
+    *  @param apn      name of the network to connect to
     *  @param user     Optional username for the APN
     *  @param pass     Optional password fot the APN
     *  @return         0 on success, negative error code on failure
     */
-    virtual int set_credentials(const char *apn, const char *username, const char *password);
+    virtual int set_credentials(const char *apn, const char *username = "", const char *password = "");
 
     /** Make cellular connection
     *
-    *  @param apn      Optional name of the network to connect to
+    *  @param apn      name of the network to connect to
     *  @param username Optional username for your APN
     *  @param password Optional password for your APN 
     *  @return         0 on success, negative error code on failure
@@ -297,14 +297,14 @@ protected:
 
 private:
 	MTSCellularRadio _radio;
-    bool _ids[CELLULAR_SOCKET_COUNT];
+    bool _ids[MAX_SOCKET_COUNT+1];
 
     void event();
 
 	struct {
 		void (*callback)(void *);
 		void *data;
-	} _cbs[CELLULAR_SOCKET_COUNT];
+	} _cbs[MAX_SOCKET_COUNT+1];
 
 	
 };
