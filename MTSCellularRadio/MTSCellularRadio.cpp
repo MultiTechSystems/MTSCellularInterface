@@ -101,7 +101,7 @@ Code test(){
 
 int MTSCellularRadio::getSignalStrength(){
     memset(_command, 0, _cmdBufSize);
-    snprintf(_command, _cmdBufSize, "AT+CSQ");
+    strcpy(_command, "AT+CSQ");
     sendCommand(_command, _cmdBufSize, _response, _rspBufSize, 2000);
 
     char * ptr;
@@ -117,7 +117,7 @@ int MTSCellularRadio::getSignalStrength(){
 
 int MTSCellularRadio::getRegistration(){
     memset(_command, 0, _cmdBufSize);
-    snprintf(_command, _cmdBufSize, "AT+CREG?");
+    strcpy(_command, "AT+CREG?");
     sendCommand(_command, _cmdBufSize, _response, _rspBufSize, 2000);
 
     char * ptr;
@@ -305,6 +305,8 @@ int MTSCellularRadio::connect(){
     }
     char ipAddr[16];
     sscanf(ptr, "#SGACT: %s", ipAddr);
+    memset(_ipAddress, 0, 16);
+    strcpy(_ipAddress, ipAddr);
 
     logInfo("PPP Connection Established: IP[%s]", ipAddr);
     return NSAPI_ERROR_OK;
@@ -333,11 +335,14 @@ int MTSCellularRadio::disconnect(){
     }
     logInfo("disconnected");
 
+    memset(_ipAddress, 0, 16);
+    strcpy(_ipAddress, "UNKNOWN");
+
     return NSAPI_ERROR_OK;
 }
 
 bool MTSCellularRadio::isConnected(){
-    snprintf(_command, _cmdBufSize, "AT#SGACT?");
+    strcpy(_command, "AT#SGACT?");
     sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
 
     char buf[8];
@@ -352,7 +357,7 @@ bool MTSCellularRadio::isConnected(){
 
 const char *MTSCellularRadio::getIPAddress(void)
 {
-    return 0;
+    return _ipAddress;
 }
 /*    
 const char *MTSCellularRadio::getMACAddress(void){
@@ -402,7 +407,7 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     int count;
 
     //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
-    snprintf(_command, _cmdBufSize, "ATE0");
+    strcpy(_command, "ATE0");
     sendCommand(_command, strlen(_command), _response, _rspBufSize);
 
     snprintf(_command, _cmdBufSize, "AT#SSEND=%d", id);
@@ -417,7 +422,7 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     }
 
     // re-enable echo.
-    snprintf(_command, _cmdBufSize, "ATE1");
+    strcpy(_command, "ATE1");
     sendCommand(_command, strlen(_command), _response, _rspBufSize);
 
     return count;
@@ -457,7 +462,7 @@ bool MTSCellularRadio::close(int id)
 
 bool MTSCellularRadio::isSocketOpen(int id)
 {
-    snprintf(_command, _cmdBufSize, "AT#SS");
+    strcpy(_command, "AT#SS");
     sendCommand(_command, strlen(_command), _response, _rspBufSize);
     char buf[16];
     snprintf(buf, sizeof(buf), "#SS: %d", id);

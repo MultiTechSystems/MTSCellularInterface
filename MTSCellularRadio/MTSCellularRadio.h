@@ -382,6 +382,7 @@ protected:
 	static const int _rspBufSize = 256;
 	char _command[_cmdBufSize];
 	char _response[_rspBufSize];
+	char _ipAddress[16];
 
     Radio _type;				//The type of radio being used
     uint8_t _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.

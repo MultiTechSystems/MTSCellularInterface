@@ -100,22 +100,20 @@ public:
      */
 //    virtual bool ping(const char *address = "8.8.8.8"); 	
 	
-    /** This method is used to send an SMS message. Note that you cannot send an
-	* SMS message and have a data connection open at the same time.
-	*
+    /** This method is used to send an SMS message.
+    	*
 	* @param phoneNumber the phone number to send the message to as a string.
 	* @param message the text message to be sent.
-	* @returns the standard AT Code enumeration.
+	* @returns ??.
 	*/
-//    virtual Code sendSMS(const char *phoneNumber, const char *message);
+//    virtual int sendSMS(const char *phoneNumber, const char *message);
 
-    /** This method is used to send an SMS message. Note that you cannot send an
-	* SMS message and have a data connection open at the same time.
-	*
+    /** This method is used to send an SMS message.
+    	*
 	* @param sms an Sms struct that contains all SMS transaction information.
-	* @returns the standard AT Code enumeration.
+	* @returns ??.
 	*/
-//    virtual Code sendSMS(const Sms& sms);
+//    virtual int sendSMS(const Sms& sms);
 
     /** This method retrieves all of the SMS messages currently available for
 	* this phone number.
@@ -236,18 +234,25 @@ protected:
 
 	/** Send data to the remote host
 	*  @param handle       Socket handle
-	*  @param data         The buffer of data to send
-	*  @param size         The length of the data buffer to send
-	*  @return             Number of bytes sent on success, negative on failure
+	*  @param data         The buffer to send to the host
+	*  @param size        The length of the buffer to send
+	*  @return             Number of written bytes on success, negative on failure
+	*  @note This call is not-blocking, if this call would block, must
+	*		 immediately return NSAPI_ERROR_WOULD_WAIT
 	*/
+
 	virtual int socket_send(void *handle, const void *data, unsigned size);
 
 	/** Receive data from the remote host
 	*  @param handle       Socket handle
-	*  @param data         The buffer to store received data
-	*  @param size         The size of the receive buffer
-	*  @return             Number of bytes received on success, negative on failure
+	*  @param handle	   Socket handle
+	*  @param data       The buffer in which to store the data received from the host
+	*  @param size       The maximum length of the buffer
+	*  @return            Number of received bytes on success, negative on failure
+	*  @note This call is not-blocking, if this call would block, must
+	*		 immediately return NSAPI_ERROR_WOULD_WAIT
 	*/
+
 	virtual int socket_recv(void *handle, void *data, unsigned size);
 
 	/** Send a packet to a remote endpoint
