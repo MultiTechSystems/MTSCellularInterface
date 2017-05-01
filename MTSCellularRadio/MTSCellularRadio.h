@@ -296,6 +296,13 @@ public:
 	*@return true if the socket closed successfully otherwise return false.
 	*/
 	bool close(int id);
+
+	/** Check for an open socket.
+	*
+	*@param id is the socket to check.
+	*@return true if the socket is not closed otherwise return false.
+	*/
+	bool isSocketOpen(int id);
 	
 	/** Pings specified DNS or IP address
 	 * Google DNS server used as default ping address

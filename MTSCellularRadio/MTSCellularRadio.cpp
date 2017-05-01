@@ -151,10 +151,13 @@ int MTSCellularRadio::sendBasicCommand(const char *command)
     _parser.setTimeout(200);
     _parser.flush();
 
-    if (_parser.send(command) && _parser.recv("OK")) {
+    int result = sendCommand(command, sizeof(command), _response, _rspBufSize);
+    if (result < 0) {
+        return MTS_FAILURE;
+    }
+    if (strstr(_response, "\r\nOK\r\n")) {
         return MTS_SUCCESS;
     }
-    return MTS_FAILURE;
 }
 
 int MTSCellularRadio::sendCommand(const char *command, int command_size, char* response, int response_size,
@@ -374,18 +377,9 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
         return false;
     }
 
-    // Check socket status... closed or not.
-    snprintf(_command, _cmdBufSize, "AT#SS");
-    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
-    char buf[16];
-    snprintf(buf, sizeof(buf), "#SS: %d", id);
-    char * ptr;
-    ptr = strstr(_response, buf);
-    if (ptr) {
-        if (ptr[7] != '0') {
-            logInfo ("socket not closed, state = %c", ptr[7]);
-            return true;
-        }
+    if (isSocketOpen(id)) {
+        logInfo("socket[%d] already open", id);
+        return true;
     }
 
     if (type == "TCP") {
@@ -452,23 +446,31 @@ bool MTSCellularRadio::close(int id)
     snprintf(_command, sizeof(_command), "AT#SH=%d", id);
     sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
 
-    snprintf(_command, sizeof(_command), "AT#SS");
-    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
-    char buf[16];
-    snprintf(buf, sizeof(buf), "#SS: %d", id);
-    char * ptr;
-    ptr = strstr(_response, buf);
-    if (ptr) {
-        if (ptr[7] == '0') {
-            logInfo("socket closed");
-            return true;
-        }
+    if (!isSocketOpen(id)) {
+        logInfo("socket[%d] closed", id);
+        return true;
     }
 
     logInfo("socket close failed");
     return false;
 }
 
+bool MTSCellularRadio::isSocketOpen(int id)
+{
+    snprintf(_command, _cmdBufSize, "AT#SS");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "#SS: %d", id);
+    char * ptr;
+    ptr = strstr(_response, buf);
+    if (ptr) {
+        if (ptr[7] != '0') {
+            logInfo ("socket not closed, state = %c", ptr[7]);
+            return true;
+        }
+    }
+    return false;
+}
 /*
 bool ping(const std::string& address){
     return true;
