@@ -7,7 +7,7 @@
 
 MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinName rts,
     PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
-    : _serial(tx, rx, 1024), _parser(_serial)
+    : _serial(tx, rx, 1024), _parser(_serial), _cid(1)
 {
 
     _echoMode = true;
@@ -44,35 +44,34 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     }
 
     // identify the radio "ATI4" gets us the model (HE910, DE910, etc)
-    const char command[] = "ATI4";
-    char response[32];
-    memset(response, 0, sizeof(response));
+    memset(_command,0,_cmdBufSize);
+    strcpy(_command, "ATI4");
     char mNumber[16];
     memset(mNumber, 0, sizeof(mNumber));
     
     _type = MTSCellularRadio::NA;
     while (true) {
-        sendCommand(command, sizeof(command), response, sizeof(response), 1000);
-        if (strstr(response,"HE910")) {
+        sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
+        if (strstr(_response,"HE910")) {
             _type = MTSCellularRadio::MTSMC_H5;
             strcpy(mNumber, "HE910");
-        } else if (strstr(response,"DE910")) {
+        } else if (strstr(_response,"DE910")) {
             _type = MTSCellularRadio::MTSMC_EV3;
             strcpy(mNumber, "DE910");
-        } else if (strstr(response,"CE910")) {
+        } else if (strstr(_response,"CE910")) {
             _type = MTSCellularRadio::MTSMC_C2;
             strcpy(mNumber, "CE910");
-        } else if (strstr(response,"GE910")) {
+        } else if (strstr(_response,"GE910")) {
             _type = MTSCellularRadio::MTSMC_G3;
             strcpy(mNumber, "GE910");
-        } else if (strstr(response,"LE910-NAG")) {
+        } else if (strstr(_response,"LE910-NAG")) {
             _type = MTSCellularRadio::MTSMC_LAT1;
             strcpy(mNumber, "LE910-NAG");
-        } else if (strstr(response,"LE910-SVG")) {
+        } else if (strstr(_response,"LE910-SVG")) {
             _type = MTSCellularRadio::MTSMC_LVW2;
             _cid = 3;
             strcpy(mNumber, "LE910-SVG");
-        } else if (strstr(response,"LE910-EUG")) {
+        } else if (strstr(_response,"LE910-EUG")) {
             _type = MTSCellularRadio::MTSMC_LEU1;
             strcpy(mNumber, "LE910-EUG");
         } else {
@@ -101,13 +100,12 @@ Code test(){
 */
 
 int MTSCellularRadio::getSignalStrength(){
-    const char command[] = "AT+CSQ";
-    char response[64];
-    memset(response, 0, sizeof(response));
-    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    memset(_command, 0, _cmdBufSize);
+    snprintf(_command, _cmdBufSize, "AT+CSQ");
+    sendCommand(_command, _cmdBufSize, _response, _rspBufSize, 2000);
 
     char * ptr;
-    ptr = strstr(response, "+CSQ:");
+    ptr = strstr(_response, "+CSQ:");
     if (!ptr) {
         return -1;
     }        
@@ -118,13 +116,12 @@ int MTSCellularRadio::getSignalStrength(){
 
 
 int MTSCellularRadio::getRegistration(){
-    const char command[] = "AT+CREG?";
-    char response[64];
-    memset(response, 0, sizeof(response));
+    memset(_command, 0, _cmdBufSize);
+    snprintf(_command, _cmdBufSize, "AT+CREG?");
+    sendCommand(_command, _cmdBufSize, _response, _rspBufSize, 2000);
 
-    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
     char * ptr;
-    ptr = strstr(response, "REG:");
+    ptr = strstr(_response, "REG:");
     if (!ptr) {
         return -1;
     }         
@@ -135,10 +132,9 @@ int MTSCellularRadio::getRegistration(){
 
 
 int MTSCellularRadio::pdpContext(const char* apn){
-    char command[64];
     strncpy(_apn, apn, strlen(apn));
-    snprintf(command, sizeof(command), "AT+CGDCONT=%d,\"IP\",%s", _cid, apn);
-    if (sendBasicCommand(command) == MTS_SUCCESS){
+    snprintf(_command, _cmdBufSize, "AT+CGDCONT=%d,\"IP\",%s", _cid, apn);
+    if (sendBasicCommand(_command) == MTS_SUCCESS){
         return NSAPI_ERROR_OK;
     }
     return NSAPI_ERROR_PARAMETER;
@@ -161,9 +157,11 @@ int MTSCellularRadio::sendBasicCommand(const char *command)
     return MTS_FAILURE;
 }
 
-
 int MTSCellularRadio::sendCommand(const char *command, int command_size, char* response, int response_size,
     unsigned int timeoutMillis, char esc){
+
+    memset(_response, 0, _rspBufSize);    // clear the member response buffer of any previous responses.
+    memset(response, 0, response_size);   // clear the passed response buffer of any previous responses.
     
     _parser.setTimeout(200);
     _parser.flush();
@@ -190,20 +188,21 @@ int MTSCellularRadio::sendCommand(const char *command, int command_size, char* r
         if (c > -1) {
             response[count++] = (char)c;
             if ((strstr(response , "\r\nOK\r\n")) || (strstr(response , "\r\nERROR\r\n"))){
-    logInfo("response = %s", response);
-                return count;
+                break;
             }
         }
         if (count >= response_size) {
             logWarning("%s response exceeds response size [%d]", command, response_size);
-            wait(1);
             break;
         }
     }
+    tmr.stop();
+    
     logInfo("response = %s", response);
     if (count > 0) {
         return count;
     }
+    memset(_command, 0, _cmdBufSize);    // clear the command buffer of any previous commands.
     return MTS_FAILURE;
     
 }
@@ -260,11 +259,12 @@ int MTSCellularRadio::connect(){
             break;
         } else {
             logTrace("Not Registered [%d] ... waiting", (int)registration);
-            wait(1);
         }
         if (tmr.read() > 30) {
+            tmr.stop();
             return NSAPI_ERROR_AUTH_FAILURE;
         }
+        wait(1);
     } while(1); 
     
     //Check RSSI: AT+CSQ
@@ -276,12 +276,14 @@ int MTSCellularRadio::connect(){
             break;            
         } else {
             logTrace("No Signal ... waiting");
-            wait(1);
         }
         if (tmr.read() > 30) {
+            tmr.stop();
             return NSAPI_ERROR_AUTH_FAILURE;
-        }        
+        }
+        wait(1);
     } while(1);
+    tmr.stop();
 
     //Make cellular connection
     if (_type == MTSMC_H5 || _type == MTSMC_G3 || _type == MTSMC_LAT1 || _type == MTSMC_LEU1) {
@@ -290,18 +292,12 @@ int MTSCellularRadio::connect(){
         logDebug("Making PPP Connection Attempt");
     }
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
-    char command[16];
-    memset(command, 0, sizeof(command));
-    char response[64];
-    memset(response, 0, sizeof(response));
-    snprintf(command, sizeof(command), "AT#SGACT=%d,1", _type == MTSMC_LVW2 ? 3 : 1);
-    sendCommand(command, sizeof(command), response, sizeof(response), 10000);
-    if (!strstr(response, "OK")) {
-        return NSAPI_ERROR_NO_CONNECTION;
-    }
+    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,1", _type == MTSMC_LVW2 ? 3 : 1);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 10000);
+
     char * ptr;
-    ptr = strstr(response, "#SGACT:");
-    if (ptr == NULL) {
+    ptr = strstr(_response, "#SGACT:");
+    if (!ptr) {
         return NSAPI_ERROR_NO_CONNECTION;
     }
     char ipAddr[16];
@@ -319,22 +315,17 @@ int MTSCellularRadio::disconnect(){
     }
 
     // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
-    char command[16];
-    memset(command, 0, sizeof(command));    
     for (int sockId = 1; sockId <= MAX_SOCKET_COUNT; sockId++){
-        snprintf(command, sizeof(command), "AT#SH=%d", sockId);        
-        sendBasicCommand(command);
+        snprintf(_command, sizeof(_command), "AT#SH=%d", sockId);        
+        sendBasicCommand(_command);
         sockId++;
     }
 
     logInfo("sockets closed");
     
-    memset(command, 0, sizeof(command));
-    char response[64];
-    memset(response, 0, sizeof(response));
-    snprintf(command, sizeof(command), "AT#SGACT=%d,0", _type == MTSMC_LVW2 ? 3 : 1);
-    sendCommand(command, sizeof(command), response, sizeof(response), 10000);
-    if (!strstr(response, "OK")) {
+    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,0", _type == MTSMC_LVW2 ? 3 : 1);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 10000);
+    if (!strstr(_response, "OK")) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     logInfo("disconnected");
@@ -343,15 +334,13 @@ int MTSCellularRadio::disconnect(){
 }
 
 bool MTSCellularRadio::isConnected(){
-    const char command[] = "AT#SGACT?";
-    char response[128];
-    memset(response, 0, sizeof(response));
+    snprintf(_command, _cmdBufSize, "AT#SGACT?");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
+
     char buf[8];
     memset(buf, 0, sizeof(buf));
-    
-    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
     snprintf(buf, sizeof(buf), "%d,1", _type == MTSMC_LVW2 ? 3 : 1);
-    if (strstr(response, buf)) {
+    if (strstr(_response, buf)) {
         return true;
     } else {
         return false;
@@ -386,14 +375,12 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
     }
 
     // Check socket status... closed or not.
-    char command[64] = "AT#SS";
-    char response[256];
-    memset(response, 0, sizeof(response));
-    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    snprintf(_command, _cmdBufSize, "AT#SS");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
     char buf[16];
     snprintf(buf, sizeof(buf), "#SS: %d", id);
     char * ptr;
-    ptr = strstr(response, buf);
+    ptr = strstr(_response, buf);
     if (ptr) {
         if (ptr[7] != '0') {
             logInfo ("socket not closed, state = %c", ptr[7]);
@@ -401,15 +388,13 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
         }
     }
 
-    memset(command, 0, sizeof(command));
-    memset(response, 0, sizeof(response));
     if (type == "TCP") {
-        snprintf(command, sizeof(command), "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
+        snprintf(_command, _cmdBufSize, "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
     } else {
-        snprintf(command, sizeof(command), "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
+        snprintf(_command, _cmdBufSize, "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
     }
-    if (sendCommand(command, sizeof(command), response, sizeof(response), 65000)) {
-        if (!strstr(response, "OK")) {
+    if (sendCommand(_command, strlen(_command), _response, _rspBufSize, 65000)) {
+        if (!strstr(_response, "OK")) {
             logInfo("open failed");
             return false;
         }
@@ -420,46 +405,42 @@ bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port
 
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
-    int responseSize = (amount < 32)? 32 : amount;
-    responseSize += 8;
-    char command[16];
-    char response[responseSize];
-    memset(command, 0, sizeof(command));
-    memset(response, 0, sizeof(response));
+    int count;
 
-    snprintf(command, sizeof(command), "AT#SSEND=%d", id);
-    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
-    if (strstr(response, "> ")){
-        memset(response, 0, sizeof(response));
-        sendCommand((const char*)data, amount, response, sizeof(response), 5000, CTRL_Z);
+    //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
+    snprintf(_command, _cmdBufSize, "ATE0");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize);
+
+    snprintf(_command, _cmdBufSize, "AT#SSEND=%d", id);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize);
+    if (strstr(_response, "> ")){
+        count = _parser.write((const char*)data, amount);
+    }
+    sendCommand("", 0, _response, _rspBufSize, 5000, CTRL_Z);
+
+    if (!strstr(_response, "OK")){
+        count = -1;
     }
 
-    if (strstr(response, "OK")){
-        return true;
-    }
+    // re-enable echo.
+    snprintf(_command, _cmdBufSize, "ATE1");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize);
 
-    return false;
+    return count;
 }
 
 int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 {
-    int responseSize = amount + 48;
-    char command[16];
-    char response[responseSize];
-    memset(command, 0, sizeof(command));
-    memset(response, 0, sizeof(response));
-
-    snprintf(command, sizeof(command), "AT#SRECV=%d,%d", id, amount);
-    sendCommand(command, sizeof(command), response, sizeof(response), 1000);
-    if (strstr(response, "\r\nERROR\r\n")){
-        logInfo("receive ERROR");
-        return 0;
-    }
+    snprintf(_command, _cmdBufSize, "AT#SRECV=%d,%d", id, amount);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
 
     char buf[16];
     snprintf(buf, sizeof(buf), "#SRECV: %d", id);
     char * ptr;
-    ptr = strstr(response, buf);
+    ptr = strstr(_response, buf);
+    if (!ptr){
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
     int connId, count;
     sscanf(ptr, "#SRECV: %d,%d %s", &connId, &count, data);
 
@@ -468,20 +449,15 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 
 bool MTSCellularRadio::close(int id)
 {
-    char command[64];
-    memset(command, 0, sizeof(command));
-    char response[256];
-    snprintf(command, sizeof(command), "AT#SH=%d", id);
-    memset(response, 0, sizeof(response));
-    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    snprintf(_command, sizeof(_command), "AT#SH=%d", id);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
 
-    snprintf(command, sizeof(command), "AT#SS");
-    memset(response, 0, sizeof(response));
-    sendCommand(command, sizeof(command), response, sizeof(response), 2000);
+    snprintf(_command, sizeof(_command), "AT#SS");
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
     char buf[16];
     snprintf(buf, sizeof(buf), "#SS: %d", id);
     char * ptr;
-    ptr = strstr(response, buf);
+    ptr = strstr(_response, buf);
     if (ptr) {
         if (ptr[7] == '0') {
             logInfo("socket closed");

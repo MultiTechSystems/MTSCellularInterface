@@ -195,8 +195,9 @@ int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddre
 int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
-    if (_radio.send(socket->id, data, size)){
-        return size;
+    int sent = _radio.send(socket->id, data, size);
+    if (sent > 0){
+        return sent;
     }
     return NSAPI_ERROR_DEVICE_ERROR;
 }
@@ -204,7 +205,11 @@ int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned s
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
-    return _radio.receive(socket->id, data, size);
+    int rcv = _radio.receive(socket->id, data, size);
+    if (rcv > 0){
+        return rcv;
+    }
+    return NSAPI_ERROR_DEVICE_ERROR;
 }
 
 int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size){

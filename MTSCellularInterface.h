@@ -236,21 +236,17 @@ protected:
 
 	/** Send data to the remote host
 	*  @param handle       Socket handle
-	*  @param data         The buffer to send to the host
-	*  @param size         The length of the buffer to send
-	*  @return             Number of written bytes on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*        immediately return NSAPI_ERROR_WOULD_WAIT
+	*  @param data         The buffer of data to send
+	*  @param size         The length of the data buffer to send
+	*  @return             Number of bytes sent on success, negative on failure
 	*/
 	virtual int socket_send(void *handle, const void *data, unsigned size);
 
 	/** Receive data from the remote host
 	*  @param handle       Socket handle
-	*  @param data         The buffer in which to store the data received from the host
-	*  @param size         The maximum length of the buffer
-	*  @return             Number of received bytes on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*        immediately return NSAPI_ERROR_WOULD_WAIT
+	*  @param data         The buffer to store received data
+	*  @param size         The size of the receive buffer
+	*  @return             Number of bytes received on success, negative on failure
 	*/
 	virtual int socket_recv(void *handle, void *data, unsigned size);
 

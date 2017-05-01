@@ -156,7 +156,7 @@ public:
 	*   value upon failure.
 	*/
     virtual int sendCommand(const char *command, int command_size, char* response, int response_size,
-    	unsigned int timeoutMillis, char esc = CR);
+    	unsigned int timeoutMillis = 1000, char esc = CR);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
@@ -275,9 +275,9 @@ public:
     /** Send socket data
     *
     * @param socket id
-    * @param socket data to send
-    * @param amount of data
-    * @return amount of data is sent successfully
+    * @param buffer of data to send
+    * @param amount of data in buffer
+    * @return amount of data successfully sent or negative value on failure.
     */
 	int send(int id, const void *data, uint32_t amount);
 
@@ -285,9 +285,8 @@ public:
     *
     * @param socket id
     * @param receive data buffer
-    * @param amount of space in buffer
-    * @return amount of data loaded into buffer
-    
+    * @param amount of space in receive buffer
+    * @return amount of data loaded into receive buffer on success or negative value on failure.
     */
 	int receive(int id, void *data, uint32_t amount);
 
@@ -372,9 +371,13 @@ public:
 protected:
 	BufferedSerial _serial;
 	ATParser _parser;
+	static const int _cmdBufSize = 64;
+	static const int _rspBufSize = 256;
+	char _command[_cmdBufSize];
+	char _response[_rspBufSize];
 
     Radio _type;				//The type of radio being used
-    uint8_t _cid = 1;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    uint8_t _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
     char _apn[64]; 			//A string that holds the APN.
     char _apnUN[64];			//A string that holds the APN username.
     char _apnPW[64];			//A string that holds the APN password.
