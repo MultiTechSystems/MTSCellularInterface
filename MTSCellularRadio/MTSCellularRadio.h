@@ -6,6 +6,7 @@
 #define MTSCELLULARRADIO_H
 
 #include "ATParser.h"
+#include <string>
 
 //Special Payload Character Constants (ASCII Values)
 const char CR	  = 0x0D;	//Carriage Return
@@ -120,7 +121,7 @@ public:
 	* @param the APN as a string.
 	* @returns 0 on success, a negative value upon failure.
 	*/
-    virtual int pdpContext(const char *apn);
+    virtual int pdpContext(const std::string& apn);
 
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
@@ -136,7 +137,7 @@ public:
 	* @param the command to send to the radio.
 	* @returns 0 for success or a negative number for a failure.
 	*/
-    virtual int sendBasicCommand(const char *command);
+	virtual int sendBasicCommand(const std::string& command);
 	
     //Cellular Radio Specific
     /** A method for sending a generic AT command to the radio.
@@ -153,8 +154,7 @@ public:
 	* @returns the number of characters loaded in the response buffer or a negative
 	*   value upon failure.
 	*/
-    virtual int sendCommand(const char *command, int command_size, char* response, int response_size,
-    	unsigned int timeoutMillis = 1000, char esc = CR);
+    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
     /** A static method for getting a string representation for the Registration
 	* enumeration.
@@ -205,14 +205,14 @@ public:
     *
 	* @returns 0 on disconnect success, else a negative value.
     */
-	virtual int disconnect();	    		
+//	virtual int disconnect();	    		
 
     /** Checks if the radio is connected to the cell network.
     * Checks context activation.
     *
     * @returns true connected, false if disconnected.
     */
-    virtual bool isConnected();
+//    virtual bool isConnected();
 
     /**
     * Get the radio's IP address
@@ -316,7 +316,7 @@ public:
 	* @param size of the message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+//	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
 	/** This method retrieves all of the SMS messages currently available for
 	* this phone number.
@@ -369,17 +369,13 @@ public:
 protected:
 	BufferedSerial _serial;
 	ATParser _parser;
-	static const int _cmdBufSize = 64;
-	static const int _rspBufSize = 256;
-	char _command[_cmdBufSize];
-	char _response[_rspBufSize];
-	char _ipAddress[16];
+	std::string _ipAddress;
 
     Radio _type;				//The type of radio being used
-    uint8_t _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
-    char _apn[64]; 			//A string that holds the APN.
-    char _apnUN[64];			//A string that holds the APN username.
-    char _apnPW[64];			//A string that holds the APN password.
+    std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    std::string _apn; 			//A string that holds the APN.
+    std::string _apnUN;			//A string that holds the APN username.
+    std::string _apnPW;			//A string that holds the APN password.
 
     bool _echoMode; 			//Specifies if the echo mode is currently enabled.
     bool _gpsEnabled;    	//true if GPS is enabled, else false.

@@ -107,7 +107,7 @@ public:
     * @param size of message to be sent.
     *  @return         0 on success, negative error code on failure
     */
-    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+//    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
     /** This method retrieves all of the SMS messages currently available for
 	* this phone number.

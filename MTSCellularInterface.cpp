@@ -19,24 +19,26 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
 }
 */
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-    return _radio.pdpContext(apn);
+  return _radio.pdpContext(apn);
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
     int result;
     result = _radio.pdpContext(apn);
-    if (result != NSAPI_ERROR_OK) {
-        return result;
+    if (result != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
     }
     return _radio.connect();
 }
     
 int MTSCellularInterface::connect(){
-    return _radio.connect();
+//  return _radio.connect();
+    return 0;    
 }
      
 int MTSCellularInterface::disconnect(){
-    return _radio.disconnect();
+//  return _radio.disconnect();
+    return 0;    
 }
 /*
 bool MTSCellularInterface::isConnected(){
@@ -46,7 +48,8 @@ bool MTSCellularInterface::isConnected(){
 
 const char *MTSCellularInterface::get_ip_address()
 {
-    return _radio.getIPAddress();
+//   return _radio.getIPAddress();
+    return "test";
 }
 
 /*
@@ -75,13 +78,13 @@ bool MTSCellularInterface::ping(const char *address){
 } 	
 */	
 
-int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
+/*int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
     if (_radio.sendSMS(phoneNumber, message, messageSize) < 0) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
 }
-
+*/
 /*
 std::vector<Sms> MTSCellularInterface::getReceivedSms(){
     std::vector<Sms> vSms;
@@ -128,7 +131,7 @@ struct cellular_socket {
 
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     // Look for an unused socket
-    int id = -1;
+/*    int id = -1;
  
     for (int i = 1; i <= MAX_SOCKET_COUNT; i++) {
         if (!_ids[i]) {
@@ -150,20 +153,20 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     socket->id = id;
     socket->proto = proto;
     socket->connected = false;
-    *handle = socket;
+    *handle = socket;*/
     return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::socket_close(void *handle){
-    struct cellular_socket *socket = (struct cellular_socket *)handle;
+//    struct cellular_socket *socket = (struct cellular_socket *)handle;
     int err = NSAPI_ERROR_OK;
- 
+ /*
     if (!_radio.close(socket->id)) {
         err = NSAPI_ERROR_DEVICE_ERROR;
     }
 
     _ids[socket->id] = false;
-    delete socket;
+    delete socket;*/
     return err;
 }
 
@@ -176,7 +179,7 @@ int MTSCellularInterface::socket_listen(void *handle, int backlog){
 }
 
 int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){
-    struct cellular_socket *socket = (struct cellular_socket *)handle;
+/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     const char *proto = (socket->proto == NSAPI_UDP) ? "UDP" : "TCP";
     if (!_radio.open(proto, socket->id, address.get_ip_address(), address.get_port())) {
@@ -185,7 +188,7 @@ int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &addr
     }
     logInfo("socket_connect success");
     
-    socket->connected = true;
+    socket->connected = true;*/
     return NSAPI_ERROR_OK;
 }
 
@@ -194,22 +197,22 @@ int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddre
 }
 
 int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
-    struct cellular_socket *socket = (struct cellular_socket *)handle;
+/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     int sent = _radio.send(socket->id, data, size);
     if (sent > 0){
         return sent;
-    }
+    }*/
     return NSAPI_ERROR_DEVICE_ERROR;
 }
 
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
-    struct cellular_socket *socket = (struct cellular_socket *)handle;
+/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     int rcv = _radio.receive(socket->id, data, size);
     if (rcv > 0){
         return rcv;
-    }
+    }*/
     return NSAPI_ERROR_DEVICE_ERROR;
 }
 
