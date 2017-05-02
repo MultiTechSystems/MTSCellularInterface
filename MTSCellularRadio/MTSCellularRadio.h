@@ -212,7 +212,7 @@ public:
     *
     * @returns true connected, false if disconnected.
     */
-//    virtual bool isConnected();
+    virtual bool isConnected();
 
     /**
     * Get the radio's IP address

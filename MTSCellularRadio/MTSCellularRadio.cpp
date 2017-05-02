@@ -99,7 +99,7 @@ int MTSCellularRadio::getRegistration(){
     }
     int start = response.find(',');
     int stop = response.find(' ', start);
-    string regStat = response.substr(start + 1, stop - start - 1);
+    std::string regStat = response.substr(start + 1, stop - start - 1);
     int value;
     sscanf(regStat.c_str(), "%d", &value);
     switch (value) {
@@ -231,9 +231,9 @@ int MTSCellularRadio::connect(){
         }
     }
 
-//    if(isConnected()) {
-//        return MTS_SUCCESS;
-//    }
+    if(isConnected()) {
+        return MTS_SUCCESS;
+    }
     
     Timer tmr;
     //Check Registration: AT+CREG? == 0,1
@@ -319,21 +319,19 @@ int MTSCellularRadio::disconnect(){
     return NSAPI_ERROR_OK;
 }
 */
-/*leon
-bool MTSCellularRadio::isConnected(){
-    strcpy(_command, "AT#SGACT?");
-    sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
 
-    char buf[8];
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "%d,1", _type == MTQ_LVW3 ? 3 : 1);
-    if (strstr(_response, buf)) {
+bool MTSCellularRadio::isConnected(){
+    std::string command = "AT#SGACT?";
+    std::string response = sendCommand(command);
+
+    std::size_t pos = response.find(',');
+    std::string act = response.substr(pos);
+    if (act.find("1") != std::string::npos) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
-*/
+
 /*leon
 const char *MTSCellularRadio::getIPAddress(void)
 {
