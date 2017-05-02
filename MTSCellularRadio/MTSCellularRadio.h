@@ -20,17 +20,17 @@ public:
 	MTSCellularRadio(PinName tx, PinName rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
 		PinName Radio_dsr, PinName Radio_dtr, PinName Radio_ri, PinName Radio_Power, PinName Radio_Reset*/);
 
-    /// Enumeration for different cellular radio types.
+    // Enumeration for different cellular radio types.
     enum Radio {
-        NA, MTSMC_H5, MTSMC_EV3, MTSMC_G3, MTSMC_C2, MTSMC_H5_IP, MTSMC_EV3_IP, MTSMC_C2_IP, MTSMC_LAT1, MTSMC_LVW2, MTSMC_LEU1
+        NA, MTQ_H5, MTQ_EV3, MTQ_C2, MTQ_LAT3, MTQ_LVW3
     };
 
-    /// An enumeration of radio registration states with a cell tower.
+    // An enumeration of radio registration states with a cell tower.
     enum Registration {
         NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
     };
 
-	/// An enumeration for common responses.
+	// An enumeration for common responses.
 	enum Code {
 		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3
 	};
@@ -40,40 +40,38 @@ public:
 		RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
 	};
 
-	/** This structure contains the data for an SMS message.
-	*/
-	struct Sms {
-		/// Message Phone Number
-		char phoneNumber[32];
-		/// Message Body
-		char message[256];
-		/// Message Timestamp
-		char timestamp[64];
-	};
+    // This structure contains the data from a received SMS message.
+//    struct Sms {
+//        // Message Phone Number
+//        std::string phoneNumber;
+//        // Message Body
+//        std::string message;
+//        // Message Timestamp
+//        std::string timestamp;
+//    };	
 
-	/** This structure contains the data for GPS position.
-	*/
-	struct gpsData {
+    // This structure contains the data for GPS position.
+    struct gpsData {
 		bool success;
-		/// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
+		// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
 		char latitude[32];
-		/// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
+		// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
 		char longitude[32];
-		/// Horizontal Diluition of Precision.
+		// Horizontal Diluition of Precision.
 		float hdop;
-		/// Altitude - mean-sea-level (geoid) in meters.
+		// Altitude - mean-sea-level (geoid) in meters.
 		float altitude;
-		/// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
+		// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
 		int fix;
-		/// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
+		// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
 		char cog[32];
-		/// Speed over ground (Km/hr).
+		// Speed over ground (Km/hr).
 		float kmhr;
-		/// Speed over ground (knots).
+		// Speed over ground (knots).
 		float knots;
-		/// Total number of satellites in use.
+		// Total number of satellites in use.
 		int satellites;
-		/// Date and time in the format YY/MM/DD,HH:MM:SS.
+		// Date and time in the format YY/MM/DD,HH:MM:SS.
 		char timestamp[32];
 	};   
 
@@ -192,7 +190,7 @@ public:
 //	std::string getEquipmentIdentifier();
 
 	/** Get string representation of radio type
-	* @returns string containing the radio type (MTSMC-H5, etc)
+	* @returns string containing the radio type (MTQ-H5, etc)
 	*/
 //	std::string getRadioType();
 
@@ -315,17 +313,10 @@ public:
 	*
 	* @param phoneNumber the phone number to send the message to as a string.
 	* @param message the text message to be sent.
+	* @param size of the message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-//	virtual Code sendSMS(const std::string& phoneNumber, const std::string& message);
-
-	/** This method is used to send an SMS message. Note that you cannot send an
-	* SMS message and have a data connection open at the same time.
-	*
-	* @param sms an Sms struct that contains all SMS transaction information.
-	* @returns the standard AT Code enumeration.
-	*/
-//	virtual Code sendSMS(const Sms& sms);
+	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
 	/** This method retrieves all of the SMS messages currently available for
 	* this phone number.
@@ -339,7 +330,7 @@ public:
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-//	virtual Code deleteAllReceivedSms();
+//	virtual int deleteAllReceivedSms();
 
 	/** This method can be used to remove/delete all received SMS messages
 	* that have been retrieved by the user through the getReceivedSms method.
@@ -347,7 +338,7 @@ public:
 	*
 	* @returns the standard AT Code enumeration.
 	*/
-//	virtual Code deleteOnlyReceivedReadSms();	
+//	virtual int deleteOnlyReceivedReadSms();	
 
 	/** Enables GPS.
 	* @returns true if GPS is enabled, false if GPS is not supported.

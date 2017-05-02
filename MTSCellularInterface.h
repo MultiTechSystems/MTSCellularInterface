@@ -101,19 +101,13 @@ public:
 //    virtual bool ping(const char *address = "8.8.8.8"); 	
 	
     /** This method is used to send an SMS message.
-    	*
-	* @param phoneNumber the phone number to send the message to as a string.
-	* @param message the text message to be sent.
-	* @returns ??.
-	*/
-//    virtual int sendSMS(const char *phoneNumber, const char *message);
-
-    /** This method is used to send an SMS message.
-    	*
-	* @param sms an Sms struct that contains all SMS transaction information.
-	* @returns ??.
-	*/
-//    virtual int sendSMS(const Sms& sms);
+    *
+    * @param phoneNumber the phone number to send the message to as a string.
+    * @param message the text message to be sent.
+    * @param size of message to be sent.
+    *  @return         0 on success, negative error code on failure
+    */
+    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
     /** This method retrieves all of the SMS messages currently available for
 	* this phone number.

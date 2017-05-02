@@ -53,27 +53,21 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     while (true) {
         sendCommand(_command, strlen(_command), _response, _rspBufSize, 1000);
         if (strstr(_response,"HE910")) {
-            _type = MTSCellularRadio::MTSMC_H5;
+            _type = MTQ_H5;
             strcpy(mNumber, "HE910");
         } else if (strstr(_response,"DE910")) {
-            _type = MTSCellularRadio::MTSMC_EV3;
+            _type = MTQ_EV3;
             strcpy(mNumber, "DE910");
         } else if (strstr(_response,"CE910")) {
-            _type = MTSCellularRadio::MTSMC_C2;
+            _type = MTQ_C2;
             strcpy(mNumber, "CE910");
-        } else if (strstr(_response,"GE910")) {
-            _type = MTSCellularRadio::MTSMC_G3;
-            strcpy(mNumber, "GE910");
         } else if (strstr(_response,"LE910-NAG")) {
-            _type = MTSCellularRadio::MTSMC_LAT1;
+            _type = MTQ_LAT3;
             strcpy(mNumber, "LE910-NAG");
         } else if (strstr(_response,"LE910-SVG")) {
-            _type = MTSCellularRadio::MTSMC_LVW2;
+            _type = MTQ_LVW3;
             _cid = 3;
             strcpy(mNumber, "LE910-SVG");
-        } else if (strstr(_response,"LE910-EUG")) {
-            _type = MTSCellularRadio::MTSMC_LEU1;
-            strcpy(mNumber, "LE910-EUG");
         } else {
             logInfo("Determining radio type");
         }
@@ -242,7 +236,7 @@ std::string MTSCellularRadio::getRadioType(){
 */
 int MTSCellularRadio::connect(){
     //Check if APN is not set, if it is not, connect will not work.
-    if (_type == MTSMC_H5_IP || _type == MTSMC_H5 || _type == MTSMC_G3 || _type == MTSMC_LAT1 || _type == MTSMC_LEU1) {
+    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
         if(sizeof(_apn) == 0) {
             logDebug("APN is not set");
             return NSAPI_ERROR_PARAMETER;
@@ -289,13 +283,13 @@ int MTSCellularRadio::connect(){
     tmr.stop();
 
     //Make cellular connection
-    if (_type == MTSMC_H5 || _type == MTSMC_G3 || _type == MTSMC_LAT1 || _type == MTSMC_LEU1) {
+    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
         logDebug("Making PPP Connection Attempt. APN[%s]", _apn);
     } else {
         logDebug("Making PPP Connection Attempt");
     }
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
-    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,1", _type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,1", _type == MTQ_LVW3 ? 3 : 1);
     sendCommand(_command, strlen(_command), _response, _rspBufSize, 10000);
 
     char * ptr;
@@ -328,7 +322,7 @@ int MTSCellularRadio::disconnect(){
 
     logInfo("sockets closed");
     
-    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,0", _type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,0", _type == MTQ_LVW3 ? 3 : 1);
     sendCommand(_command, strlen(_command), _response, _rspBufSize, 10000);
     if (!strstr(_response, "OK")) {
         return NSAPI_ERROR_DEVICE_ERROR;
@@ -347,7 +341,7 @@ bool MTSCellularRadio::isConnected(){
 
     char buf[8];
     memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "%d,1", _type == MTSMC_LVW2 ? 3 : 1);
+    snprintf(buf, sizeof(buf), "%d,1", _type == MTQ_LVW3 ? 3 : 1);
     if (strstr(_response, buf)) {
         return true;
     } else {
@@ -480,29 +474,148 @@ bool MTSCellularRadio::isSocketOpen(int id)
 bool ping(const std::string& address){
     return true;
 }
+*/
 
-Code sendSMS(const std::string& phoneNumber, const std::string& message){
+int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int messageSize){
+    strcpy(_command, "AT+CMGF=1");
+    if(sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000) < 0) {
+        logError("CMGF failed");
+        return MTS_FAILURE;
+    }
+
+    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
+        strcpy(_command, "AT+CSMP=17,167,0,0");
+    } else if (_type == MTQ_EV3 || _type == MTQ_C2 || _type == MTQ_LVW3) {
+        strcpy(_command, "AT+CSMP=,4098,0,2");
+    } else {
+        logError("unknown radio type [%d]", _type);
+        return MTS_FAILURE;
+    }
+    
+    if(sendBasicCommand(_command) < 0) {
+        logError("CSMP failed");// [%s]", getRadioNames(_type).c_str());
+        return MTS_FAILURE;
+    }
+    
+    snprintf(_command, _cmdBufSize, "AT+CMGS=\"+%s\",145", phoneNumber);
+    sendCommand(_command, strlen(_command), _response, _rspBufSize, 2000);
+    if (strstr(_response, "> ")){
+        _parser.write(message, messageSize);
+    }
+    sendCommand("", 0, _response, _rspBufSize, 15000, CTRL_Z);
+
+    if (strstr(_response, "+CMGS:")) {
+        return MTS_SUCCESS;
+    }
+        
+    return MTS_FAILURE;
+}
+
+/*
+std::vector<Cellular::Sms> MTSCellularRadio::getReceivedSms()
+{
+    int smsNumber = 0;
+    std::vector<Sms> vSms;
+    std::string received;
+    size_t pos;
+    
+    Code code = sendBasicCommand("AT+CMGF=1", 2000);
+    if (code != MTS_SUCCESS) {
+        logError("CMGF failed");
+        return vSms;
+    }
+    
+    received = sendCommand("AT+CMGL=\"ALL\"", 5000);
+    pos = received.find("+CMGL: ");
+
+    while (pos != std::string::npos) {
+        Cellular::Sms sms;
+        std::string line(Text::getLine(received, pos, pos));
+        if(line.find("+CMGL: ") == std::string::npos) {
+            continue;
+        }
+        //Start of SMS message
+        std::vector<std::string> vSmsParts = Text::split(line, ',');
+        if (type == MTSMC_H5_IP || type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
+            /* format for H5 and H5-IP radios
+             * <index>, <status>, <oa>, <alpha>, <scts>
+             * scts contains a comma, so splitting on commas should give us 6 items
+             */
+/*            if(vSmsParts.size() != 6) {
+                logWarning("Expected 5 commas. SMS[%d] DATA[%s]. Continuing ...", smsNumber, line.c_str());
+                continue;
+            }
+
+            sms.phoneNumber = vSmsParts[2];
+            sms.timestamp = vSmsParts[4] + ", " + vSmsParts[5];
+        } else if (type == MTSMC_EV3_IP || type == MTSMC_EV3 || type == MTSMC_C2_IP || type == MTSMC_C2 || type == MTSMC_LVW2) {
+            /* format for EV3 and EV3-IP radios
+             * <index>, <status>, <oa>, <callback>, <date>
+             * splitting on commas should give us 5 items
+             */
+/*            if(vSmsParts.size() != 5) {
+                logWarning("Expected 4 commas. SMS[%d] DATA[%s]. Continuing ...", smsNumber, line.c_str());
+                continue;
+            }
+            
+            sms.phoneNumber = vSmsParts[2];
+            /* timestamp is in a nasty format
+             * YYYYMMDDHHMMSS
+             * nobody wants to try and decipher that, so format it nicely
+             * YY/MM/DD,HH:MM:SS
+             */
+/*            string s = vSmsParts[4];
+            if (type == MTSMC_LVW2) {
+                sms.timestamp = s.substr(3,2) + "/" + s.substr(5,2) + "/" + s.substr(7,2) + ", " + s.substr(9,2) + ":" + s.substr(11,2) + ":" + s.substr(13,2);
+            } else {
+                sms.timestamp = s.substr(2,2) + "/" + s.substr(4,2) + "/" + s.substr(6,2) + ", " + s.substr(8,2) + ":" + s.substr(10,2) + ":" + s.substr(12,2);
+            }
+        }
+
+        if(pos == std::string::npos) {
+            logWarning("Expected SMS body. SMS[%d]. Leaving ...", smsNumber);
+            break;
+        }
+        //Check for the start of the next SMS message
+        size_t bodyEnd = received.find("\r\n+CMGL:", pos);
+        if(bodyEnd == std::string::npos) {
+            //This must be the last SMS message
+            bodyEnd = received.find("\r\n\r\nOK", pos);
+        }
+        //Safety check that we found the boundary of this current SMS message
+        if(bodyEnd != std::string::npos) {
+            sms.message = received.substr(pos, bodyEnd - pos);
+        } else {
+            sms.message = received.substr(pos);
+            logWarning("Expected to find end of SMS list. SMS[%d] DATA[%s].", smsNumber, sms.message.c_str());
+        }
+        vSms.push_back(sms);
+        pos = bodyEnd;
+        smsNumber++;
+    }
+    logInfo("Received %d SMS", smsNumber);
+    return vSms;
+}
+/*
+int MTSCellularRadio::deleteOnlyReceivedReadSms()
+{
+    strcpy(_command, "AT+CMGD=1,1");
+    if(sendBasicCommand(_command) < 0) {
+        return MTS_FAILURE;
+    }
     return MTS_SUCCESS;
 }
 
-
-Code sendSMS(const Sms& sms){
-    return MTS_SUCCESS;
+int MTSCellularRadio::deleteAllReceivedSms()
+{
+    strcpy(_command, "AT+CMGD=1,4");
+    if(sendBasicCommand(_command) < 0) {
+        return MTS_FAILURE;
+    }
+    return MTS_SUCCESS;    
 }
-
-std::vector<Sms> getReceivedSms(){
-    std::vector<Sms> sms;
-    return sms;
-}
-
-Code deleteAllReceivedSms(){
-    return MTS_SUCCESS;
-}
-
-Code deleteOnlyReceivedReadSms(){
-    return MTS_SUCCESS;
-}
-
+*/
+/*
 bool GPSenable(){
     return true;
 }

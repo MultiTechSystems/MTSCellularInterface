@@ -73,15 +73,16 @@ void MTSCellularInterface::reset(){
 bool MTSCellularInterface::ping(const char *address){
     return true;
 } 	
-	
-Code MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message){
-    return MTS_SUCCESS;
+*/	
+
+int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
+    if (_radio.sendSMS(phoneNumber, message, messageSize) < 0) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }
 
-Code MTSCellularInterface::sendSMS(const Sms& sms){
-    return MTS_SUCCESS;    
-}
-
+/*
 std::vector<Sms> MTSCellularInterface::getReceivedSms(){
     std::vector<Sms> vSms;
     return vSms;
