@@ -132,27 +132,24 @@ public:
 //    virtual Code setDns(const std::string& primary, const std::string& secondary = "0.0.0.0");
 
     /** A method for sending a basic AT command to the radio. A basic AT command is
-	* one that simply has a response of OK.
+	* one that simply has a response of OK or ERROR.
 	*
-	* @param the command to send to the radio.
+	* @param command string to send to the radio.
+	* @param timeoutMillis the time in millis to wait for a response before returning. If
+	*   OK or ERROR are detected in the response the timer is short circuited.
 	* @returns 0 for success or a negative number for a failure.
 	*/
-	virtual int sendBasicCommand(const std::string& command);
+	virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis = 1000);
 	
     //Cellular Radio Specific
-    /** A method for sending a generic AT command to the radio.
+    /** A method for sending AT commands to the radio.
 	*
-	* @param command to send to the radio.
-	* @param size of the command.
-	* @param buffer for the response. NOTE: Make sure this buffer is large enough to receive
-	*   a response that includes the echoed command as well as all the CR/LF characters.
-	* @param size of the response buffer.
+	* @param command string to send to the radio.
 	* @param timeoutMillis the time in millis to wait for a response before returning. If
 	*   OK or ERROR are detected in the response the timer is short circuited.
 	* @param esc escape character to add at the end of the command, defaults to
 	*   carriage return (CR).  Does not append any character if esc == 0.
-	* @returns the number of characters loaded in the response buffer or a negative
-	*   value upon failure.
+	* @returns a string containing the response to the command. The string will be empty upon failure.
 	*/
     virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
@@ -203,23 +200,29 @@ public:
     /** Cellular disconnect / context deactivation.	
     * Closes any and all sockets before disconnect
     *
-	* @returns 0 on disconnect success, else a negative value.
+    * @returns 0 on disconnect success, else a negative value.
     */
-//	virtual int disconnect();	    		
+	virtual int disconnect();	    		
 
     /** Checks if the radio is connected to the cell network.
     * Checks context activation.
     *
-    * @returns true connected, false if disconnected.
+    * @returns true if connected, false if disconnected.
     */
     virtual bool isConnected();
+
+    /** Checks if the radio's APN is set
+    *
+    * @returns true if set, false if empty.
+    */
+	virtual bool isAPNset();
 
     /**
     * Get the radio's IP address
     *
-    * @return null-teriminated IP address or null if no IP address is assigned
+    * @return a string containing the IP address or an empty string if no IP address is assigned
     */
-    const char *getIPAddress(void);
+    std::string getIPAddress(void);
 
     /**
     * Attach a function to call whenever network state has changed
@@ -373,9 +376,6 @@ protected:
 
     Radio _type;				//The type of radio being used
     std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
-    std::string _apn; 			//A string that holds the APN.
-    std::string _apnUN;			//A string that holds the APN username.
-    std::string _apnPW;			//A string that holds the APN password.
 
     bool _echoMode; 			//Specifies if the echo mode is currently enabled.
     bool _gpsEnabled;    	//true if GPS is enabled, else false.

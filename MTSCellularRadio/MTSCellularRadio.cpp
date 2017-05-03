@@ -124,8 +124,9 @@ int MTSCellularRadio::getRegistration(){
 int MTSCellularRadio::pdpContext(const std::string& apn){
     std::string command = "AT+CGDCONT=";
     command.append(_cid);
-    command.append(",\"IP\",");
+    command.append(",\"IP\",\"");
     command.append(apn);
+    command.append("\"");
     return sendBasicCommand(command);
 }
 
@@ -136,12 +137,12 @@ Code setDns(const std::string& primary, const std::string& secondary){
 */
 
 
-int MTSCellularRadio::sendBasicCommand(const std::string& command)
+int MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis)
 {
     _parser.setTimeout(200);
     _parser.flush();
 
-    std::string response = sendCommand(command, 2000);
+    std::string response = sendCommand(command, timeoutMillis);
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
     } else if (response.find("OK") != std::string::npos) {
@@ -223,12 +224,10 @@ std::string MTSCellularRadio::getRadioType(){
 */
 
 int MTSCellularRadio::connect(){
-    //Check if APN is not set, if it is not, connect will not work.
-    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
-        if(sizeof(_apn) == 0) {
-            logDebug("APN is not set");
-            return MTS_FAILURE;
-        }
+    logInfo("connecting context %s...", _cid.c_str());
+    //The apn must be configured for some radios or connect will not work.
+    if ((_type == MTQ_H5 || _type == MTQ_LAT3) && !isAPNset()) {
+        return MTS_FAILURE;
     }
 
     if(isConnected()) {
@@ -270,55 +269,66 @@ int MTSCellularRadio::connect(){
     } while(1);
     tmr.stop();
 
-    //Make cellular connection
-    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
-        logDebug("Making PPP Connection Attempt. APN[%s]", _apn.c_str());
-    } else {
-        logDebug("Making PPP Connection Attempt");
-    }
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
+    logDebug("Making connection attempt");
     std::string command = "AT#SGACT=";
     command.append(_cid);
     command.append(",1");
     std::string response = sendCommand(command, 10000);
 
     std::size_t pos = response.find("#SGACT: ");
+    if (pos == std::string::npos) {
+        return MTS_FAILURE;
+    }
+    // Make sure it connected.
+    if (!isConnected()) {
+        return MTS_FAILURE;
+    }
     std::string ipAddr = response.substr(pos+8);
+    _ipAddress = ipAddr;
 
-    logInfo("PPP Connection Established: IP = %s", ipAddr.c_str());
+    logInfo("connected context %s; IP = %s", _cid.c_str(), ipAddr.c_str());
     return MTS_SUCCESS;
 }
 
-/*leon
 int MTSCellularRadio::disconnect(){
-    logInfo("disconnecting");
-    if(!isConnected()) {
-        logInfo("already disconnected");
-        return NSAPI_ERROR_OK;
-    }
-
-    // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
-    for (int sockId = 1; sockId <= MAX_SOCKET_COUNT; sockId++){
-        snprintf(_command, sizeof(_command), "AT#SH=%d", sockId);        
-        sendBasicCommand(_command);
-        sockId++;
-    }
-
-    logInfo("sockets closed");
+    logInfo("disconnecting...");
     
-    snprintf(_command, _cmdBufSize, "AT#SGACT=%d,0", _type == MTQ_LVW3 ? 3 : 1);
-    sendCommand(_command, strlen(_command), _response, _rspBufSize, 10000);
-    if (!strstr(_response, "OK")) {
-        return NSAPI_ERROR_DEVICE_ERROR;
+    // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
+    std::string id;
+    char charCommand[16];
+    for (int sockId = 1; sockId <= MAX_SOCKET_COUNT; sockId++){
+        snprintf(charCommand, 16, "AT#SH=%d", sockId);
+        sendBasicCommand(std::string(charCommand));
+    }
+
+    // Disconnect.
+    std::string command = "AT#SGACT=";
+    command.append(_cid);
+    command.append(",0");
+    sendBasicCommand(command, 5000);
+
+    // Verify disconnecct.
+    Timer tmr;
+    tmr.start();
+    bool connected = true;
+    // It is taking the  HE910 about 300ms before it indicates that it is disconnected. So check for a few seconds.
+    while(tmr < 3){
+        wait_ms(200);
+        if (!isConnected()) {
+            connected = false;
+            break;
+        }
+    }
+    tmr.stop();
+    if (connected) {
+        logInfo("failed to disconnect");
+        return MTS_FAILURE;
     }
     logInfo("disconnected");
-
-    memset(_ipAddress, 0, 16);
-    strcpy(_ipAddress, "UNKNOWN");
-
-    return NSAPI_ERROR_OK;
+    _ipAddress.clear();
+    return MTS_SUCCESS;
 }
-*/
 
 bool MTSCellularRadio::isConnected(){
     std::string command = "AT#SGACT?";
@@ -332,12 +342,29 @@ bool MTSCellularRadio::isConnected(){
     return false;
 }
 
-/*leon
-const char *MTSCellularRadio::getIPAddress(void)
+bool MTSCellularRadio::isAPNset(){
+    std::string response = sendCommand("AT+CGDCONT?");
+    std::string delimiter = ",";
+    std::string apn;
+    std::size_t pos;
+    for (int i = 0; i < 3; i++) {
+        pos = response.find(delimiter);
+        apn = response.substr(0, pos);
+        response.erase(0, pos + delimiter.length());
+    }
+    if (apn.size() < 3) {
+        logDebug("APN is not set");
+        return false;
+    }
+    logInfo("APN = %s", apn.c_str()); 
+    return true;
+}
+
+std::string MTSCellularRadio::getIPAddress(void)
 {
     return _ipAddress;
 }
-*/
+
 /*    
 const char *MTSCellularRadio::getMACAddress(void){
     return 0;

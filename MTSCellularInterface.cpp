@@ -23,12 +23,13 @@ int MTSCellularInterface::set_credentials(const char *apn, const char *username,
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
-    int result;
-    result = _radio.pdpContext(apn);
-    if (result != MTSCellularRadio::MTS_SUCCESS) {
+    if (_radio.pdpContext(apn) != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
-    return _radio.connect();
+    if (_radio.connect() == MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_OK;
+    }
+    return NSAPI_ERROR_DEVICE_ERROR;
 }
     
 int MTSCellularInterface::connect(){
@@ -37,8 +38,10 @@ int MTSCellularInterface::connect(){
 }
      
 int MTSCellularInterface::disconnect(){
-//  return _radio.disconnect();
-    return 0;    
+    if (_radio.disconnect() == MTSCellularRadio::MTS_SUCCESS){
+        return NSAPI_ERROR_OK;
+    }
+    return NSAPI_ERROR_DEVICE_ERROR;
 }
 /*
 bool MTSCellularInterface::isConnected(){
@@ -48,8 +51,7 @@ bool MTSCellularInterface::isConnected(){
 
 const char *MTSCellularInterface::get_ip_address()
 {
-//   return _radio.getIPAddress();
-    return "test";
+    return _radio.getIPAddress().c_str();
 }
 
 /*
