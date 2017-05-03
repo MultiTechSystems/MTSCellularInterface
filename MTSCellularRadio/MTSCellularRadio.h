@@ -269,9 +269,9 @@ public:
     * @param id id to give the new socket, valid 0-4
     * @param port port to open connection with
     * @param addr the IP address of the destination
-    * @return true only if socket opened successfully
+    * @return 0 if socket opened successfully otherwise a negative value.
     */
-    bool open(const char *type, int id, const char* addr, int port);
+    int open(const char *type, int id, const char* addr, int port);
 
     /** Send socket data
     *

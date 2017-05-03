@@ -133,7 +133,7 @@ struct cellular_socket {
 
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     // Look for an unused socket
-/*    int id = -1;
+    int id = -1;
  
     for (int i = 1; i <= MAX_SOCKET_COUNT; i++) {
         if (!_ids[i]) {
@@ -155,7 +155,7 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     socket->id = id;
     socket->proto = proto;
     socket->connected = false;
-    *handle = socket;*/
+    *handle = socket;
     return NSAPI_ERROR_OK;
 }
 
@@ -181,16 +181,16 @@ int MTSCellularInterface::socket_listen(void *handle, int backlog){
 }
 
 int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &address){
-/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     const char *proto = (socket->proto == NSAPI_UDP) ? "UDP" : "TCP";
-    if (!_radio.open(proto, socket->id, address.get_ip_address(), address.get_port())) {
+    if (_radio.open(proto, socket->id, address.get_ip_address(), address.get_port()) != MTSCellularRadio::MTS_SUCCESS) {
         logInfo("socket_connect error");
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     logInfo("socket_connect success");
     
-    socket->connected = true;*/
+    socket->connected = true;
     return NSAPI_ERROR_OK;
 }
 

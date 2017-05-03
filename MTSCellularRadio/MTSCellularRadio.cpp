@@ -91,7 +91,6 @@ int MTSCellularRadio::getSignalStrength(){
     return rssi;
 }
 
-
 int MTSCellularRadio::getRegistration(){
     std::string response = sendCommand("AT+CREG?", 5000);
     if (response.find("OK") == string::npos) {
@@ -102,24 +101,8 @@ int MTSCellularRadio::getRegistration(){
     std::string regStat = response.substr(start + 1, stop - start - 1);
     int value;
     sscanf(regStat.c_str(), "%d", &value);
-    switch (value) {
-        case 0:
-            return NOT_REGISTERED;
-        case 1:
-            return REGISTERED;
-        case 2:
-            return SEARCHING;
-        case 3:
-            return DENIED;
-        case 4:
-            return UNKNOWN;
-        case 5:
-            return ROAMING;
-    }
-    return UNKNOWN;
+    return value;
 }
-
-
  
 int MTSCellularRadio::pdpContext(const std::string& apn){
     std::string command = "AT+CGDCONT=";
@@ -135,7 +118,6 @@ Code setDns(const std::string& primary, const std::string& secondary){
     return MTS_SUCCESS;
 }
 */
-
 
 int MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis)
 {
@@ -312,8 +294,8 @@ int MTSCellularRadio::disconnect(){
     Timer tmr;
     tmr.start();
     bool connected = true;
-    // It is taking the  HE910 about 300ms before it indicates that it is disconnected. So check for a few seconds.
-    while(tmr < 3){
+    // I have seen the HE910 take as long as 1s to indicate disconnect. So check for a few seconds.
+    while(tmr < 5){
         wait_ms(200);
         if (!isConnected()) {
             connected = false;
@@ -382,33 +364,32 @@ const char *MTSCellularRadio::getNetmask()
 }
 */
 
-/*leon
-bool MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
+int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
     if(id > MAX_SOCKET_COUNT) {
-        return false;
+        return MTS_FAILURE;
     }
 
     if (isSocketOpen(id)) {
         logInfo("socket[%d] already open", id);
-        return true;
+        return MTS_SUCCESS;
     }
 
+    char charCommand[64];
     if (type == "TCP") {
-        snprintf(_command, _cmdBufSize, "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
+        snprintf(charCommand, 64, "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
     } else {
-        snprintf(_command, _cmdBufSize, "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
+        snprintf(charCommand, 64, "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
     }
-    if (sendCommand(_command, strlen(_command), _response, _rspBufSize, 65000)) {
-        if (!strstr(_response, "OK")) {
-            logInfo("open failed");
-            return false;
-        }
+    std::string response = sendCommand(std::string(charCommand), 65000);
+    if (response.find("OK") == std::string::npos){
+        logInfo("open failed");
+        return MTS_FAILURE;
     }
     logInfo("open success");
-    return true;
+    return MTS_SUCCESS;
 }
-*/
+
 /*leon
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
@@ -470,24 +451,25 @@ bool MTSCellularRadio::close(int id)
     return false;
 }
 */
-/*leon
+
 bool MTSCellularRadio::isSocketOpen(int id)
 {
-    strcpy(_command, "AT#SS");
-    sendCommand(_command, strlen(_command), _response, _rspBufSize);
+    std::string response = sendCommand("AT#SS");
     char buf[16];
     snprintf(buf, sizeof(buf), "#SS: %d", id);
-    char * ptr;
-    ptr = strstr(_response, buf);
-    if (ptr) {
-        if (ptr[7] != '0') {
-            logInfo ("socket not closed, state = %c", ptr[7]);
-            return true;
-        }
+    std::size_t pos = response.find(std::string(buf));
+    response = response.substr(pos);
+    pos = response.find(",");
+    response = response.substr(pos);    
+    int status;
+    sscanf(response.c_str(), ",%d", &status);
+    if (status != 0) {
+        logInfo ("socket not closed, state = %d", status);
+        return true;
     }
     return false;
 }
-*/
+
 /*
 bool ping(const std::string& address){
     return true;
