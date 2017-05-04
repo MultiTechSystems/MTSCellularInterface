@@ -319,7 +319,7 @@ public:
 	* @param size of the message to be sent.
 	* @returns the standard AT Code enumeration.
 	*/
-//	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
 	/** This method retrieves all of the SMS messages currently available for
 	* this phone number.

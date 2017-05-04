@@ -80,13 +80,13 @@ bool MTSCellularInterface::ping(const char *address){
 } 	
 */	
 
-/*int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
+int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
     if (_radio.sendSMS(phoneNumber, message, messageSize) < 0) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
 }
-*/
+
 /*
 std::vector<Sms> MTSCellularInterface::getReceivedSms(){
     std::vector<Sms> vSms;
@@ -160,15 +160,15 @@ int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
 }
 
 int MTSCellularInterface::socket_close(void *handle){
-//    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
     int err = NSAPI_ERROR_OK;
- /*
+ 
     if (!_radio.close(socket->id)) {
         err = NSAPI_ERROR_DEVICE_ERROR;
     }
 
     _ids[socket->id] = false;
-    delete socket;*/
+    delete socket;
     return err;
 }
 
@@ -199,22 +199,22 @@ int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddre
 }
 
 int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned size){
-/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     int sent = _radio.send(socket->id, data, size);
     if (sent > 0){
         return sent;
-    }*/
+    }
     return NSAPI_ERROR_DEVICE_ERROR;
 }
 
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
-/*    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     int rcv = _radio.receive(socket->id, data, size);
     if (rcv > 0){
         return rcv;
-    }*/
+    }
     return NSAPI_ERROR_DEVICE_ERROR;
 }
 
