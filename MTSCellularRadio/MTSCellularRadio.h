@@ -42,14 +42,14 @@ public:
 	};
 
     // This structure contains the data from a received SMS message.
-//    struct Sms {
-//        // Message Phone Number
-//        std::string phoneNumber;
-//        // Message Body
-//        std::string message;
-//        // Message Timestamp
-//        std::string timestamp;
-//    };	
+    struct Sms {
+        // Message Phone Number
+        std::string phoneNumber;
+        // Message Body
+        std::string message;
+        // Message Timestamp
+        std::string timestamp;
+    };	
 
     // This structure contains the data for GPS position.
     struct gpsData {
@@ -311,37 +311,37 @@ public:
 	 */
 //	virtual bool ping(const std::string& address = "8.8.8.8");	
 
-	/** This method is used to send an SMS message. Note that you cannot send an
-	* SMS message and have a data connection open at the same time.
-	*
-	* @param phoneNumber the phone number to send the message to as a string.
-	* @param message the text message to be sent.
-	* @param size of the message to be sent.
-	* @returns the standard AT Code enumeration.
-	*/
-	virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+    /** This method is used to send an SMS message. Note that you cannot send an
+    * SMS message and have a data connection open at the same time.
+    *
+    * @param phoneNumber the phone number to send the message to as a string.
+    * @param message the text message to be sent.
+    * @param size of the message to be sent.
+    * @returns the standard AT Code enumeration.
+    */
+    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
-	/** This method retrieves all of the SMS messages currently available for
-	* this phone number.
-	*
-	* @returns a vector of existing SMS messages each as an Sms struct.
-	*/
-//	virtual std::vector<Sms> getReceivedSms();
+    /** This method retrieves all of the SMS messages currently available for
+    * this phone number.
+    *
+    * @returns a vector of existing SMS messages each as an Sms struct.
+    */
+    virtual std::vector<Sms> getReceivedSms();
 
-	/** This method can be used to remove/delete all received SMS messages
-	* even if they have never been retrieved or read.
-	*
-	* @returns the standard AT Code enumeration.
-	*/
-//	virtual int deleteAllReceivedSms();
+    /** This method can be used to remove/delete all received SMS messages
+    * even if they have never been retrieved or read.
+    *
+    * @return 0 on success otherwise a negative value.
+    */
+    virtual int deleteAllReceivedSms();
 
-	/** This method can be used to remove/delete all received SMS messages
-	* that have been retrieved by the user through the getReceivedSms method.
-	* Messages that have not been retrieved yet will be unaffected.
-	*
-	* @returns the standard AT Code enumeration.
-	*/
-//	virtual int deleteOnlyReceivedReadSms();	
+    /** This method can be used to remove/delete all received SMS messages
+    * that have been retrieved by the user through the getReceivedSms method.
+    * Messages that have not been retrieved yet will be unaffected.
+    *
+    * @return 0 on success otherwise a negative value.
+    */
+    virtual int deleteOnlyReceivedReadSms();	
 
 	/** Enables GPS.
 	* @returns true if GPS is enabled, false if GPS is not supported.

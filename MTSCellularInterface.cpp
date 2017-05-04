@@ -81,26 +81,31 @@ bool MTSCellularInterface::ping(const char *address){
 */	
 
 int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
-    if (_radio.sendSMS(phoneNumber, message, messageSize) < 0) {
+    if (_radio.sendSMS(phoneNumber, message, messageSize) != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
 }
 
-/*
-std::vector<Sms> MTSCellularInterface::getReceivedSms(){
-    std::vector<Sms> vSms;
-    return vSms;
+std::vector<MTSCellularRadio::Sms> MTSCellularInterface::getReceivedSms(){
+    return _radio.getReceivedSms();
 }
 
-Code MTSCellularInterface::deleteAllReceivedSms(){
-    return MTS_SUCCESS;
+
+int MTSCellularInterface::deleteAllReceivedSms(){
+    if (_radio.deleteAllReceivedSms() != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }
 
-Code MTSCellularInterface::deleteOnlyReceivedReadSms(){
-    return MTS_SUCCESS;
+int MTSCellularInterface::deleteOnlyReceivedReadSms(){
+    if (_radio.deleteOnlyReceivedReadSms() != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }	
-
+/*
 bool MTSCellularInterface::GPSenable(){
     return true;
 }

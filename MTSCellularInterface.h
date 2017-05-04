@@ -105,31 +105,31 @@ public:
     * @param phoneNumber the phone number to send the message to as a string.
     * @param message the text message to be sent.
     * @param size of message to be sent.
-    *  @return         0 on success, negative error code on failure
+    *  @return 0 on success, negative error code on failure
     */
     virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
 
     /** This method retrieves all of the SMS messages currently available for
-	* this phone number.
-	*
-	* @returns a vector of existing SMS messages each as an Sms struct.
-	*/
-//    virtual std::vector<Sms> getReceivedSms();
+    * this phone number.
+    *
+    * @returns a vector of existing SMS messages each as an Sms struct.
+    */
+    virtual std::vector<MTSCellularRadio::Sms> getReceivedSms();
 
     /** This method can be used to remove/delete all received SMS messages
-	* even if they have never been retrieved or read.
-	*
-	* @returns the standard AT Code enumeration.
-	*/
-//    virtual Code deleteAllReceivedSms();
+    * even if they have never been retrieved or read.
+    *
+    *  @return 0 on success, negative error code on failure
+    */
+    virtual int deleteAllReceivedSms();
 
     /** This method can be used to remove/delete all received SMS messages
-	* that have been retrieved by the user through the getReceivedSms method.
-	* Messages that have not been retrieved yet will be unaffected.
-	*
-	* @returns the standard AT Code enumeration.
-	*/
-//    virtual Code deleteOnlyReceivedReadSms();	
+    * that have been retrieved by the user through the getReceivedSms method.
+    * Messages that have not been retrieved yet will be unaffected.
+    *
+    *  @return 0 on success, negative error code on failure
+    */
+    virtual int deleteOnlyReceivedReadSms();	
 
     /** Enables GPS.
 	* @returns true if GPS is enabled, false if GPS is not supported.

@@ -4,6 +4,9 @@
 
 #include "MTSCellularRadio.h"
 #include "MTSLog.h"
+#include "MTSText.h"
+
+using namespace mts;
 
 MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinName rts,
     PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
@@ -511,16 +514,15 @@ int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int 
     return MTS_FAILURE;
 }
 
-/*
-std::vector<Cellular::Sms> MTSCellularRadio::getReceivedSms()
+
+std::vector<MTSCellularRadio::Sms> MTSCellularRadio::getReceivedSms()
 {
     int smsNumber = 0;
     std::vector<Sms> vSms;
     std::string received;
-    size_t pos;
+    std::size_t pos;
     
-    Code code = sendBasicCommand("AT+CMGF=1", 2000);
-    if (code != MTS_SUCCESS) {
+    if (sendBasicCommand("AT+CMGF=1", 2000) != MTS_SUCCESS) {
         logError("CMGF failed");
         return vSms;
     }
@@ -529,31 +531,31 @@ std::vector<Cellular::Sms> MTSCellularRadio::getReceivedSms()
     pos = received.find("+CMGL: ");
 
     while (pos != std::string::npos) {
-        Cellular::Sms sms;
+        Sms sms;
         std::string line(Text::getLine(received, pos, pos));
         if(line.find("+CMGL: ") == std::string::npos) {
             continue;
         }
         //Start of SMS message
         std::vector<std::string> vSmsParts = Text::split(line, ',');
-        if (type == MTSMC_H5_IP || type == MTSMC_H5 || type == MTSMC_G3 || type == MTSMC_LAT1 || type == MTSMC_LEU1) {
+        if (_type == MTQ_H5 || _type == MTQ_LAT3) {
             /* format for H5 and H5-IP radios
              * <index>, <status>, <oa>, <alpha>, <scts>
              * scts contains a comma, so splitting on commas should give us 6 items
              */
-/*            if(vSmsParts.size() != 6) {
+            if(vSmsParts.size() != 6) {
                 logWarning("Expected 5 commas. SMS[%d] DATA[%s]. Continuing ...", smsNumber, line.c_str());
                 continue;
             }
 
             sms.phoneNumber = vSmsParts[2];
             sms.timestamp = vSmsParts[4] + ", " + vSmsParts[5];
-        } else if (type == MTSMC_EV3_IP || type == MTSMC_EV3 || type == MTSMC_C2_IP || type == MTSMC_C2 || type == MTSMC_LVW2) {
+        } else if (_type == MTQ_EV3 || _type == MTQ_C2 || _type == MTQ_LVW3) {
             /* format for EV3 and EV3-IP radios
              * <index>, <status>, <oa>, <callback>, <date>
              * splitting on commas should give us 5 items
              */
-/*            if(vSmsParts.size() != 5) {
+            if(vSmsParts.size() != 5) {
                 logWarning("Expected 4 commas. SMS[%d] DATA[%s]. Continuing ...", smsNumber, line.c_str());
                 continue;
             }
@@ -564,8 +566,8 @@ std::vector<Cellular::Sms> MTSCellularRadio::getReceivedSms()
              * nobody wants to try and decipher that, so format it nicely
              * YY/MM/DD,HH:MM:SS
              */
-/*            string s = vSmsParts[4];
-            if (type == MTSMC_LVW2) {
+            string s = vSmsParts[4];
+            if (_type == MTQ_LVW3) {
                 sms.timestamp = s.substr(3,2) + "/" + s.substr(5,2) + "/" + s.substr(7,2) + ", " + s.substr(9,2) + ":" + s.substr(11,2) + ":" + s.substr(13,2);
             } else {
                 sms.timestamp = s.substr(2,2) + "/" + s.substr(4,2) + "/" + s.substr(6,2) + ", " + s.substr(8,2) + ":" + s.substr(10,2) + ":" + s.substr(12,2);
@@ -596,25 +598,18 @@ std::vector<Cellular::Sms> MTSCellularRadio::getReceivedSms()
     logInfo("Received %d SMS", smsNumber);
     return vSms;
 }
-/*
+
+
 int MTSCellularRadio::deleteOnlyReceivedReadSms()
 {
-    strcpy(_command, "AT+CMGD=1,1");
-    if(sendBasicCommand(_command) < 0) {
-        return MTS_FAILURE;
-    }
-    return MTS_SUCCESS;
+    return sendBasicCommand("AT+CMGD=1,1");
 }
 
 int MTSCellularRadio::deleteAllReceivedSms()
 {
-    strcpy(_command, "AT+CMGD=1,4");
-    if(sendBasicCommand(_command) < 0) {
-        return MTS_FAILURE;
-    }
-    return MTS_SUCCESS;    
+    return sendBasicCommand("AT+CMGD=1,4");
 }
-*/
+
 /*
 bool GPSenable(){
     return true;
