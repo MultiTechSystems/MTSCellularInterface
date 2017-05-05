@@ -34,7 +34,8 @@ public:
 	// An enumeration for radio responses.
 	enum Code {
 		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3, MTS_NO_CONNECTION = -4, 
-		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8
+		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8, 
+		MTS_NEED_APN = -9
 	};
 
     // This structure contains the data from a received SMS message.
@@ -287,12 +288,12 @@ public:
     */
 	int receive(int id, void *data, uint32_t amount);
 
-	/** Close a socket.
-	*
-	*@param id is the socket to close.
-	*@return true if the socket closed successfully otherwise return false.
-	*/
-	bool close(int id);
+    /** Close a socket.
+    *
+    *@param id is the socket to close.
+    * @return MTS_SUCCESS if the socket closed successfully otherwise return MTS_FAILURE.
+    */
+    int close(int id);
 
 	/** Check for an open socket.
 	*
@@ -375,14 +376,9 @@ protected:
 	std::string _ipAddress;
 
     Radio _type;				//The type of radio being used
+    std::string _radio_model;
     std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
 
-    bool _echoMode; 			//Specifies if the echo mode is currently enabled.
-    bool _pppConnected; 		//Specifies if a PPP session is currently connected.
-    //Mode socketMode; 		//The current socket Mode.
-    bool _socketOpened; 		//Specifies if a Socket is presently opened.
-    bool _socketCloseable; 	//Specifies is a Socket can be closed.
-    
 	DigitalIn* radio_cts;	//Maps to the radio's cts signal
 	DigitalOut* radio_rts;	//Maps to the radio's rts signal
     DigitalIn* radio_dcd;	//Maps to the radio's dcd signal

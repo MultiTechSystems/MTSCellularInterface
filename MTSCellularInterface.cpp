@@ -19,22 +19,29 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
 }
 */
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-  return _radio.pdpContext(apn);
+    if (_radio.pdpContext(apn) != MTSCellularRadio::MTS_SUCCESS){
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
     if (_radio.pdpContext(apn) != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
-    if (_radio.connect() == MTSCellularRadio::MTS_SUCCESS) {
-        return NSAPI_ERROR_OK;
-    }
-    return NSAPI_ERROR_DEVICE_ERROR;
+    return connect();
 }
     
 int MTSCellularInterface::connect(){
-//  return _radio.connect();
-    return 0;    
+    int result = _radio.connect();
+    switch (result){
+        case MTSCellularRadio::MTS_FAILURE:
+            return NSAPI_ERROR_DEVICE_ERROR;
+        case MTSCellularRadio::MTS_SUCCESS:
+            return NSAPI_ERROR_OK;
+        default:
+            return NSAPI_ERROR_NO_CONNECTION;
+    }  
 }
      
 int MTSCellularInterface::disconnect(){
@@ -172,7 +179,7 @@ int MTSCellularInterface::socket_close(void *handle){
     struct cellular_socket *socket = (struct cellular_socket *)handle;
     int err = NSAPI_ERROR_OK;
  
-    if (!_radio.close(socket->id)) {
+    if (_radio.close(socket->id) != MTSCellularRadio::MTS_SUCCESS) {
         err = NSAPI_ERROR_DEVICE_ERROR;
     }
 
@@ -193,14 +200,16 @@ int MTSCellularInterface::socket_connect(void *handle, const SocketAddress &addr
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     const char *proto = (socket->proto == NSAPI_UDP) ? "UDP" : "TCP";
-    if (_radio.open(proto, socket->id, address.get_ip_address(), address.get_port()) != MTSCellularRadio::MTS_SUCCESS) {
-        logInfo("socket_connect error");
-        return NSAPI_ERROR_DEVICE_ERROR;
+    int result = _radio.open(proto, socket->id, address.get_ip_address(), address.get_port());
+    switch (result) {
+        case MTSCellularRadio::MTS_NO_CONNECTION:
+            return NSAPI_ERROR_NO_CONNECTION;
+        case MTSCellularRadio::MTS_SUCCESS:
+            socket->connected = true;
+            return NSAPI_ERROR_OK;
+        default: 
+            return NSAPI_ERROR_DEVICE_ERROR;
     }
-    logInfo("socket_connect success");
-    
-    socket->connected = true;
-    return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::socket_accept(void *handle, void **socket, SocketAddress *address){
@@ -214,7 +223,14 @@ int MTSCellularInterface::socket_send(void *handle, const void *data, unsigned s
     if (sent > 0){
         return sent;
     }
-    return NSAPI_ERROR_DEVICE_ERROR;
+    switch (sent) {
+        case MTSCellularRadio::MTS_NO_CONNECTION:
+            return NSAPI_ERROR_NO_CONNECTION;
+        case MTSCellularRadio::MTS_SOCKET_CLOSED:
+            return NSAPI_ERROR_NO_SOCKET;
+        default:
+            return NSAPI_ERROR_DEVICE_ERROR;
+    }
 }
 
 int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
@@ -224,7 +240,14 @@ int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
     if (rcv > 0){
         return rcv;
     }
-    return NSAPI_ERROR_DEVICE_ERROR;
+    switch (rcv) {
+        case MTSCellularRadio::MTS_NO_CONNECTION:
+            return NSAPI_ERROR_NO_CONNECTION;
+        case MTSCellularRadio::MTS_SOCKET_CLOSED:
+            return NSAPI_ERROR_NO_SOCKET;
+        default:
+            return NSAPI_ERROR_DEVICE_ERROR;
+    }
 }
 
 int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size){

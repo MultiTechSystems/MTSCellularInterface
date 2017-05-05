@@ -12,13 +12,6 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
     : _serial(tx, rx, 1024), _parser(_serial), _cid("1")
 {
-
-    _echoMode = true;
-    _pppConnected = false;
-    //_socketMode = TCP;
-    _socketOpened = false;
-    _socketCloseable = true;
-    
 	radio_cts = NULL;
 	radio_rts = NULL;
     radio_dcd = NULL;
@@ -35,31 +28,31 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         //
         
     // identify the radio "ATI4" gets us the model (HE910, DE910, etc)
-    std::string response, mNumber;
+    std::string response;
     _type = MTSCellularRadio::NA;
     while (true) {
         response = sendCommand("ATI4");
         if (response.find("HE910") != std::string::npos) {
             _type = MTQ_H5;
-            mNumber = "HE910";
+            _radio_model = "MTQ-H5";
         } else if (response.find("DE910") != std::string::npos) {
             _type = MTQ_EV3;
-            mNumber = "DE910";
+            _radio_model = "MTQ-EV3";
         } else if (response.find("CE910") != std::string::npos) {
             _type = MTQ_C2;
-            mNumber = "CE910";
+            _radio_model = "MTQ-C2";
         } else if (response.find("LE910-NA1") != std::string::npos) {
             _type = MTQ_LAT3;
-            mNumber = "LE910-NA1";
+            _radio_model = "MTQ-LAT3";
         } else if (response.find("LE910-SV1") != std::string::npos) {
             _type = MTQ_LVW3;
             _cid = "3";
-            mNumber = "LE910-SV1";
+            _radio_model = "MTQ-LVW3";
         } else {
-            logInfo("Determining radio type");
+            logInfo("Determining radio model");
         }
         if (_type != MTSCellularRadio::NA) {
-            logInfo("radio model: %s", mNumber.c_str());
+            logInfo("radio model: %s", _radio_model.c_str());
             break;
         }
         wait(1);
@@ -211,7 +204,8 @@ int MTSCellularRadio::connect(){
     logInfo("connecting context %s...", _cid.c_str());
     //The apn must be configured for some radios or connect will not work.
     if ((_type == MTQ_H5 || _type == MTQ_LAT3) && !isAPNset()) {
-        return MTS_FAILURE;
+        logError("Can't connect. %s needs an APN.", _radio_model.c_str());
+        return MTS_NEED_APN;
     }
 
     if(isConnected()) {
@@ -230,7 +224,7 @@ int MTSCellularRadio::connect(){
         }
         if (tmr.read() > 30) {
             tmr.stop();
-            return MTS_FAILURE;
+            return MTS_NOT_REGISTERED;
         }
         wait(1);
     } while(1); 
@@ -247,7 +241,7 @@ int MTSCellularRadio::connect(){
         }
         if (tmr.read() > 30) {
             tmr.stop();
-            return MTS_FAILURE;
+            return MTS_NO_SIGNAL;
         }
         wait(1);
     } while(1);
@@ -368,6 +362,10 @@ const char *MTSCellularRadio::getNetmask()
 
 int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
+    if (!isConnected()) {
+        return MTS_NO_CONNECTION;
+    }
+
     if(id > MAX_SOCKET_COUNT) {
         return MTS_FAILURE;
     }
@@ -395,6 +393,13 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
+    if (!isConnected()){
+        return MTS_NO_CONNECTION;
+    }
+    if (!isSocketOpen(id)){
+        return MTS_SOCKET_CLOSED;
+    }
+    
     int count;
 
     //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
@@ -421,6 +426,13 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 
 int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 {   
+    if (!isConnected()){
+        return MTS_NO_CONNECTION;
+    }
+    if (!isSocketOpen(id)){
+        return MTS_SOCKET_CLOSED;
+    }
+
     char charCommand[32];
     snprintf(charCommand, 32, "AT#SRECV=%d,%d", id, amount);
     std::string response = sendCommand(charCommand);
@@ -429,7 +441,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     snprintf(buf, sizeof(buf), "#SRECV: %d", id);
     std::size_t pos = response.find(std::string(buf));
     if (pos == std::string::npos) {
-        return NSAPI_ERROR_DEVICE_ERROR;
+        return MTS_FAILURE;
     }
     response = response.substr(pos);
     int connId, count;
@@ -439,7 +451,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 }
 
 
-bool MTSCellularRadio::close(int id)
+int MTSCellularRadio::close(int id)
 {
     char charCommand[16];
     snprintf(charCommand, 16, "AT#SH=%d", id);
@@ -447,11 +459,11 @@ bool MTSCellularRadio::close(int id)
 
     if (!isSocketOpen(id)) {
         logInfo("socket[%d] closed", id);
-        return true;
+        return MTS_SUCCESS;
     }
 
-    logInfo("socket close failed");
-    return false;
+    logError("socket close failed");
+    return MTS_FAILURE;
 }
 
 
