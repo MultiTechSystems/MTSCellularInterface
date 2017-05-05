@@ -132,29 +132,34 @@ public:
     virtual int deleteOnlyReceivedReadSms();	
 
     /** Enables GPS.
-	* @returns true if GPS is enabled, false if GPS is not supported.
+    *
+    *  @return 0 on success, negative error code on failure
 	*/
-//    virtual bool GPSenable();
+    virtual int GPSenable();
 
     /** Disables GPS.
-	* @returns true if GPS is disabled, false if GPS does not disable.
-	*/
-//    virtual bool GPSdisable();
+    *
+    *  @return 0 on success, negative error code on failure
+    */
+    virtual int GPSdisable();
 
     /** Checks if GPS is enabled.
-	* @returns true if GPS is enabled, false if GPS is disabled.
-	*/
-//    virtual bool GPSenabled();
+    *
+    * @returns true if GPS is enabled, false if GPS is disabled.
+    */
+    virtual bool GPSenabled();
         
     /** Get GPS position.
-	* @returns a structure containing the GPS data field information.
-	*/
-//    virtual gpsData GPSgetPosition();
+    *
+    * @returns a structure containing the GPS data field information.
+    */
+    virtual MTSCellularRadio::gpsData GPSgetPosition();
 
     /** Check for GPS fix.
-	* @returns true if there is a fix and false otherwise.
-	*/
-//    virtual bool GPSgotFix();	
+    *
+    * @returns true if there is a fix and false otherwise.
+    */
+    virtual bool GPSgotFix();	
 
 	/** Translates a hostname to an IP address with specific version
 	 *

@@ -14,7 +14,6 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 {
 
     _echoMode = true;
-    _gpsEnabled = false;
     _pppConnected = false;
     //_socketMode = TCP;
     _socketOpened = false;
@@ -49,13 +48,13 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         } else if (response.find("CE910") != std::string::npos) {
             _type = MTQ_C2;
             mNumber = "CE910";
-        } else if (response.find("LE910-NAG") != std::string::npos) {
+        } else if (response.find("LE910-NA1") != std::string::npos) {
             _type = MTQ_LAT3;
-            mNumber = "LE910-NAG";
-        } else if (response.find("LE910-SVG") != std::string::npos) {
+            mNumber = "LE910-NA1";
+        } else if (response.find("LE910-SV1") != std::string::npos) {
             _type = MTQ_LVW3;
             _cid = "3";
-            mNumber = "LE910-SVG";
+            mNumber = "LE910-SV1";
         } else {
             logInfo("Determining radio type");
         }
@@ -610,25 +609,128 @@ int MTSCellularRadio::deleteAllReceivedSms()
     return sendBasicCommand("AT+CMGD=1,4");
 }
 
-/*
-bool GPSenable(){
-    return true;
+int MTSCellularRadio::GPSenable() {
+//Send these two commands without regard to the result. Some radios require
+// these settings for GPS and others don't. The ones that don't will return
+// an ERROR which we will simply ignore.    
+//Enable the LNA(Low Noise Amplifier). This increases the GPS signal.   
+    sendBasicCommand("AT$GPSAT=1", 2000);
+//GPS is 'locked'(off) by default. Set to 0 to unlock it.    
+    sendBasicCommand("AT$GPSLOCK=0", 2000);
+        
+//The HE910 returns an ERROR if you try to enable when it is already enabled.
+// That's why we need to check if GPS is enabled before enabling it.
+    if(GPSenabled()) {
+        return MTS_SUCCESS;
+    }
+ 
+    if (sendBasicCommand("AT$GPSP=1", 2000) == MTS_SUCCESS) {
+        logInfo("GPS enabled.");
+        return MTS_SUCCESS;
+    } else {
+        logError("Enable GPS failed.");
+        return MTS_FAILURE;
+    }
 }
 
-bool GPSdisable(){
-    return true;
+int MTSCellularRadio::GPSdisable() {
+// The HE910 returns an ERROR if you try to disable when it is already disabled.
+// That's why we need to check if GPS is disabled before disabling it.
+    if(!GPSenabled()) {
+        logInfo("GPS was already disabled.");
+        return true;
+    }
+    if (sendBasicCommand("AT$GPSP=0", 2000) == MTS_SUCCESS) {
+        logInfo("GPS disabled.");
+        return MTS_SUCCESS;
+    } else {
+        logError("Disable GPS failed.");
+        return MTS_FAILURE;
+    }
 }
 
-bool GPSenabled(){
-    return true;
+bool MTSCellularRadio::GPSenabled() {
+    std::string reply = sendCommand("AT$GPSP?", 1000);
+    if(reply.find("1") != std::string::npos) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
-gpsData GPSgetPosition(){
-    gpsData data;
-    return data;
+MTSCellularRadio::gpsData MTSCellularRadio::GPSgetPosition(){
+    enum gpsFields{time, latitude, longitude, hdop, altitude, fix, cog, kmhr, knots, date, satellites, numOfFields };
+    MTSCellularRadio::gpsData position;
+    if(!GPSenabled()) {
+        logError("GPS is disabled... can't get position.");
+        position.success = false;
+        return position;
+    }
+    // Get the position information in string format.
+    std::string gps = sendCommand("AT$GPSACP?", 1000);
+    logInfo("AT$GPSACP? = %s", gps.c_str());
+    if(gps.find("OK") != std::string::npos) {
+        position.success = true;
+        // Remove echoed AT$GPSACP and leading non position characters.
+        std::size_t pos = gps.find("$GPSACP: ");
+        logInfo("pos = %d", pos);
+        gps.erase(0, pos+9);
+        logInfo("AT$GPSACP? = %s", gps.c_str());
+        
+        // Remove trailing CR/LF, CR/LF, OK and CR/LF.
+        pos = gps.find("\r\n\r\nOK\r\n");
+        logInfo("pos = %d", pos);
+        gps.erase(gps.begin()+pos, gps.end());
+        logInfo("AT$GPSACP? = %s", gps.c_str());
+        
+        // Split remaining data and load into corresponding structure fields.
+        std::vector<std::string> gpsParts = Text::split(gps, ',');
+        // Check size.
+        if(gpsParts.size() != numOfFields) {
+            logError("Expected %d fields but there are %d fields in \"%s\"", numOfFields, gpsParts.size(), gps.c_str());
+            position.success = false;
+            return position; 
+        }
+        for (int i = 0; i < numOfFields; i++){
+            logInfo("gpsParts[%d] = %s", i, gpsParts[i].c_str());
+        }
+
+        position.latitude = gpsParts[1];
+        position.longitude = gpsParts[longitude];
+        position.hdop = atof(gpsParts[hdop].c_str());
+        position.altitude = atof(gpsParts[altitude].c_str());
+        position.fix = atoi(gpsParts[fix].c_str());
+        position.cog = gpsParts[cog];
+        position.kmhr = atof(gpsParts[kmhr].c_str());
+        position.knots = atof(gpsParts[knots].c_str());
+        position.satellites = atoi(gpsParts[satellites].c_str());
+        if((gpsParts[date].size() == 6) && (gpsParts[time].size() == 10)) {
+            position.timestamp = gpsParts[date].substr(4,2) + "/" + gpsParts[date].substr(2,2) + 
+            "/" + gpsParts[date].substr(0,2) + ", " + gpsParts[time].substr(0,2) + 
+            ":" + gpsParts[time].substr(2,2) + ":" + gpsParts[time].substr(4,6);        
+        }
+        return position;     
+    } else {
+        position.success = false;
+        logError("NO \"OK\" returned from GPS position command \"AT$GPSACP?\".");
+        return position;
+    }
+}   
+    
+bool MTSCellularRadio::GPSgotFix() {
+    if(!GPSenabled()) {
+        logError("GPS is disabled... can't get fix.");
+        return false;
+    }
+    MTSCellularRadio::gpsData position = GPSgetPosition();
+    if(!position.success) {
+        return false;
+    } else if(position.fix < 2){
+        logWarning("No GPS fix. GPS fix can take a few minutes. Check GPS antenna attachment and placement.");
+        return false;
+    } else {
+        logInfo("Got GPS fix.");
+        return true;
+    }
 }
 
-bool GPSgotFix(){
-    return true;
-}
-*/

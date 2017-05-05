@@ -105,29 +105,33 @@ int MTSCellularInterface::deleteOnlyReceivedReadSms(){
     }
     return NSAPI_ERROR_OK;
 }	
-/*
-bool MTSCellularInterface::GPSenable(){
-    return true;
+
+int MTSCellularInterface::GPSenable(){
+    if (_radio.GPSenable() != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }
 
-bool MTSCellularInterface::GPSdisable(){
-    return true;
+int MTSCellularInterface::GPSdisable(){
+    if (_radio.GPSdisable() != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
 }
 
 bool MTSCellularInterface::GPSenabled(){
-    return true;
+    return _radio.GPSenabled();
 }
         
-gpsData MTSCellularInterface::GPSgetPosition(){
-    gpsData response;
-    response.success = true;
-    return response;
+MTSCellularRadio::gpsData MTSCellularInterface::GPSgetPosition(){
+    return _radio.GPSgetPosition();
 }
 
 bool MTSCellularInterface::GPSgotFix(){
-    return true;    
+    return _radio.GPSgotFix();    
 }	
-*/
+
 
 struct cellular_socket {
     int id;

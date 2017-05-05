@@ -31,14 +31,10 @@ public:
         NOT_REGISTERED, REGISTERED, SEARCHING, DENIED, UNKNOWN, ROAMING
     };
 
-	// An enumeration for common responses.
+	// An enumeration for radio responses.
 	enum Code {
-		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3
-	};
-
-	// Enumeration for radio power.
-	enum Power{
-		RADIO_OFF, RADIO_ON, RADIO_SLEEP, RADIO_RESET
+		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3, MTS_NO_CONNECTION = -4, 
+		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8
 	};
 
     // This structure contains the data from a received SMS message.
@@ -55,9 +51,9 @@ public:
     struct gpsData {
 		bool success;
 		// Format is ddmm.mmmm N/S. Where: dd - degrees 00..90; mm.mmmm - minutes 00.0000..59.9999; N/S: North/South.
-		char latitude[32];
+		std::string latitude;
 		// Format is dddmm.mmmm E/W. Where: ddd - degrees 000..180; mm.mmmm - minutes 00.0000..59.9999; E/W: East/West.
-		char longitude[32];
+		std::string longitude;
 		// Horizontal Diluition of Precision.
 		float hdop;
 		// Altitude - mean-sea-level (geoid) in meters.
@@ -65,7 +61,7 @@ public:
 		// 0 or 1 - Invalid Fix; 2 - 2D fix; 3 - 3D fix.
 		int fix;
 		// Format is ddd.mm - Course over Ground. Where: ddd - degrees 000..360; mm - minutes 00..59.
-		char cog[32];
+		std::string cog;
 		// Speed over ground (Km/hr).
 		float kmhr;
 		// Speed over ground (knots).
@@ -73,7 +69,7 @@ public:
 		// Total number of satellites in use.
 		int satellites;
 		// Date and time in the format YY/MM/DD,HH:MM:SS.
-		char timestamp[32];
+		std::string timestamp;
 	};   
 
     /** Controls radio power.
@@ -343,31 +339,35 @@ public:
     */
     virtual int deleteOnlyReceivedReadSms();	
 
-	/** Enables GPS.
-	* @returns true if GPS is enabled, false if GPS is not supported.
+    /** Enables GPS.
+    *
+    *  @return 0 on success, negative error code on failure
 	*/
-//	virtual bool GPSenable();
+    virtual int GPSenable();
 
-	/** Disables GPS.
-	* @returns true if GPS is disabled, false if GPS does not disable.
-	*/
-//	virtual bool GPSdisable();
+    /** Disables GPS.
+    *
+    *  @return 0 on success, negative error code on failure
+    */
+    virtual int GPSdisable();
 
-	/** Checks if GPS is enabled.
-	* @returns true if GPS is enabled, false if GPS is disabled.
-	*/
-//	virtual bool GPSenabled();
-		
-	/** Get GPS position.
-	* @returns a structure containing the GPS data field information.
-	*/
-//	virtual gpsData GPSgetPosition();
+    /** Checks if GPS is enabled.
+    *
+    * @returns true if GPS is enabled, false if GPS is disabled.
+    */
+    virtual bool GPSenabled();
+        
+    /** Get GPS position.
+    *
+    * @returns a structure containing the GPS data field information.
+    */
+    virtual gpsData GPSgetPosition();
 
-	/** Check for GPS fix.
-	* @returns true if there is a fix and false otherwise.
-	*/
-//	virtual bool GPSgotFix();	
-
+    /** Check for GPS fix.
+    *
+    * @returns true if there is a fix and false otherwise.
+    */
+    virtual bool GPSgotFix();	
 
 protected:
 	BufferedSerial _serial;
@@ -378,7 +378,6 @@ protected:
     std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
 
     bool _echoMode; 			//Specifies if the echo mode is currently enabled.
-    bool _gpsEnabled;    	//true if GPS is enabled, else false.
     bool _pppConnected; 		//Specifies if a PPP session is currently connected.
     //Mode socketMode; 		//The current socket Mode.
     bool _socketOpened; 		//Specifies if a Socket is presently opened.
