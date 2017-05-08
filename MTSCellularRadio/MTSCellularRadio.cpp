@@ -78,28 +78,35 @@ int MTSCellularRadio::getSignalStrength(){
     if (response.find("OK") == std::string::npos) {
         return MTS_FAILURE;
     }
-    int start = response.find(':');
-    int stop = response.find(',', start);
-    std::string signal = response.substr(start + 2, stop - start - 2);
+    int start = response.find(':')+2;
+    int stop = response.find(',');
+    std::string signal = response.substr(start, stop);
     int rssi;
     sscanf(signal.c_str(), "%d", &rssi);
     return rssi;
 }
 
 int MTSCellularRadio::getRegistration(){
-    std::string response = sendCommand("AT+CREG?", 5000);
-    if (response.find("OK") == string::npos) {
+    std::string response;
+    if (_type == MTQ_LAT3 || _type == MTQ_LVW3) {
+        response = sendCommand("AT+CGREG?", 5000);
+    } else {
+        response = sendCommand("AT+CREG?", 5000);
+    } 
+    if (response.find("OK") == std::string::npos) {
         return UNKNOWN;
     }
-    int start = response.find(',');
-    int stop = response.find(' ', start);
-    std::string regStat = response.substr(start + 1, stop - start - 1);
-    int value;
-    sscanf(regStat.c_str(), "%d", &value);
-    return value;
+    int start = response.find(',')+1;
+    std::string regStat = response.substr(start, start+1);
+    int networkReg;
+    sscanf(regStat.c_str(), "%d", &networkReg);
+    return networkReg;
 }
  
 int MTSCellularRadio::pdpContext(const std::string& apn){
+    if (_type == MTQ_C2 || _type == MTQ_EV3 || _type == MTQ_LVW3) {
+        return MTS_NOT_ALLOWED;
+    }
     std::string command = "AT+CGDCONT=";
     command.append(_cid);
     command.append(",\"IP\",\"");
@@ -213,7 +220,7 @@ int MTSCellularRadio::connect(){
     }
     
     Timer tmr;
-    //Check Registration: AT+CREG? == 0,1
+    //Check Registration
     tmr.start();
     do {
         Registration registration = (Registration)getRegistration();
@@ -309,29 +316,67 @@ int MTSCellularRadio::disconnect(){
 }
 
 bool MTSCellularRadio::isConnected(){
-    std::string command = "AT#SGACT?";
-    std::string response = sendCommand(command);
-
-    std::size_t pos = response.find(',');
-    std::string act = response.substr(pos);
-    if (act.find("1") != std::string::npos) {
-        return true;
+    if (!isSIMinserted()) {
+        return false;
     }
-    return false;
+
+    std::string response = sendCommand("AT#SGACT?");
+    if (response.find("OK") == std::string::npos) {
+        logError("Activation check failed");
+        return false;
+    }
+    std::string reply = "#SGACT: ";
+    reply.append(_cid);
+    std::size_t pos = response.find(reply);
+    if (pos == std::string::npos) {
+        logError("Activation check failed, %s not found", reply.c_str());
+        return false;
+    }
+    std::string conStat = response.substr(pos+10, pos+11);
+    int contextAct;
+    sscanf(conStat.c_str(), "%d", &contextAct);
+    if (contextAct == 0) {
+        return false;
+    }
+    return true;
 }
 
-bool MTSCellularRadio::isAPNset(){
+bool MTSCellularRadio::isSIMinserted()
+{
+    if (_type == MTQ_C2) {
+        return true;
+    }
+    if (sendBasicCommand("AT#QSS=1") != MTS_SUCCESS) {
+        logWarning("Query SIM status failed");
+    }
+    std::string response = sendCommand("AT#QSS?");
+    if (response.find("OK") == std::string::npos) {
+        logWarning("Query SIM status failed");
+    }
+    if (response.find("1,0") != std::string::npos) {
+        logError("SIM not inserted");
+        return false;
+    }
+    return true;
+}
+
+bool MTSCellularRadio::isAPNset()
+{
     std::string response = sendCommand("AT+CGDCONT?");
     std::string delimiter = ",";
     std::string apn;
     std::size_t pos;
     for (int i = 0; i < 3; i++) {
         pos = response.find(delimiter);
+        if (pos == std::string::npos) {
+            logWarning("APN not found");
+            return false;
+        }        
         apn = response.substr(0, pos);
         response.erase(0, pos + delimiter.length());
     }
     if (apn.size() < 3) {
-        logDebug("APN is not set");
+        logWarning("APN is not set");
         return false;
     }
     logInfo("APN = %s", apn.c_str()); 
@@ -473,8 +518,16 @@ bool MTSCellularRadio::isSocketOpen(int id)
     char buf[16];
     snprintf(buf, sizeof(buf), "#SS: %d", id);
     std::size_t pos = response.find(std::string(buf));
+    if (pos == std::string::npos) {
+        logWarning("failed to read socket status");
+        return false;
+    }
     response = response.substr(pos);
     pos = response.find(",");
+    if (pos == std::string::npos) {
+        logWarning("failed to read socket status");
+        return false;
+    }    
     response = response.substr(pos);    
     int status;
     sscanf(response.c_str(), ",%d", &status);
@@ -685,15 +738,21 @@ MTSCellularRadio::gpsData MTSCellularRadio::GPSgetPosition(){
         position.success = true;
         // Remove echoed AT$GPSACP and leading non position characters.
         std::size_t pos = gps.find("$GPSACP: ");
-        logInfo("pos = %d", pos);
+        if (pos == std::string::npos) {
+            logError("AT$GPSACP? command fialed");
+            position.success = false;
+            return position;
+        }
         gps.erase(0, pos+9);
-        logInfo("AT$GPSACP? = %s", gps.c_str());
         
         // Remove trailing CR/LF, CR/LF, OK and CR/LF.
         pos = gps.find("\r\n\r\nOK\r\n");
-        logInfo("pos = %d", pos);
+        if (pos == std::string::npos) {
+            logError("AT$GPSACP? command fialed");
+            position.success = false;
+            return position;
+        }        
         gps.erase(gps.begin()+pos, gps.end());
-        logInfo("AT$GPSACP? = %s", gps.c_str());
         
         // Split remaining data and load into corresponding structure fields.
         std::vector<std::string> gpsParts = Text::split(gps, ',');
@@ -703,10 +762,6 @@ MTSCellularRadio::gpsData MTSCellularRadio::GPSgetPosition(){
             position.success = false;
             return position; 
         }
-        for (int i = 0; i < numOfFields; i++){
-            logInfo("gpsParts[%d] = %s", i, gpsParts[i].c_str());
-        }
-
         position.latitude = gpsParts[1];
         position.longitude = gpsParts[longitude];
         position.hdop = atof(gpsParts[hdop].c_str());

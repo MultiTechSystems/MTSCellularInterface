@@ -19,14 +19,19 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
 }
 */
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-    if (_radio.pdpContext(apn) != MTSCellularRadio::MTS_SUCCESS){
+    int result = _radio.pdpContext(apn);
+    if (result == MTSCellularRadio::MTS_NOT_ALLOWED){
+        return NSAPI_ERROR_UNSUPPORTED;
+    }
+    if (result != MTSCellularRadio::MTS_SUCCESS){
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
 }
 
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
-    if (_radio.pdpContext(apn) != MTSCellularRadio::MTS_SUCCESS) {
+    int result = set_credentials(apn, username, password);
+    if (result == NSAPI_ERROR_DEVICE_ERROR) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return connect();

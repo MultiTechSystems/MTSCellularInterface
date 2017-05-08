@@ -35,7 +35,7 @@ public:
 	enum Code {
 		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3, MTS_NO_CONNECTION = -4, 
 		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8, 
-		MTS_NEED_APN = -9
+		MTS_NEED_APN = -9, MTS_MISSING_SIM = -10, MTS_NOT_ALLOWED = -11
 	};
 
     // This structure contains the data from a received SMS message.
@@ -207,6 +207,12 @@ public:
     * @returns true if connected, false if disconnected.
     */
     virtual bool isConnected();
+
+    /** Checks if the radio's SIM is inserted
+    *
+    * @returns true if inserted or radio does not require a SIM card, false if not inserted.
+    */
+	virtual bool isSIMinserted();
 
     /** Checks if the radio's APN is set
     *
