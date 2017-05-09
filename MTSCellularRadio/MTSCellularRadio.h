@@ -86,12 +86,6 @@ public:
 		std::string timestamp;
 	};   
 
-    /** Controls radio power.
-    	* Before power is removed, the connection must be brought down.
-    	*
-    	* @returns true if successful, false if a failure was detected.
-    	*/
-//    bool power(Power option);
     	
 	/** Sets up the physical connection pins
 	*   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
@@ -99,14 +93,6 @@ public:
 //    bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
 //    	unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
 
-    /** A method for testing command access to the radio.  This method sends the
-	* command "AT" to the radio, which is a standard radio test to see if you
-	* have command access to the radio.  The function returns when it receives
-	* the expected response from the radio.
-	*
-	* @returns the standard AT Code enumeration.
-	*/
-//    virtual Code test();
 
     /** A method for getting the signal strength of the radio. This method allows you to
 	* get a value that maps to signal strength in dBm. Here 0-1 is Poor, 2-9 is Marginal,
@@ -163,43 +149,6 @@ public:
 	*/
     virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
-    /** A static method for getting a string representation for the Registration
-	* enumeration.
-	*
-	* @param code a Registration enumeration.
-	* @returns the enumeration name as a string.
-	*/
-//    static std::string getRegistrationNames(Registration registration);
-
-    /** A static method for getting a string representation for the Radio
-	* enumeration.
-	*
-	* @param type a Radio enumeration.
-	* @returns the enumeration name as a string.
-	*/
-//    static std::string getRadioNames(Radio radio);
-    
-    /** A method for changing the echo commands from radio.
-	* @param state Echo mode is off (an argument of 1 turns echos off, anything else turns echo on)
-	* @returns standard Code enumeration
-	*/
-//    virtual Code echo(bool state);
-
-	/** Gets the device IP
-	* @returns string containing the IP address
-	*/
-//	virtual std::string getDeviceIP();
-
-	/** Get the device IMEI or MEID (whichever is available)
-	* @returns string containing the IMEI for GSM, the MEID for CDMA, or an empty string
-	* if it failed to parse the number.
-	*/
-//	std::string getEquipmentIdentifier();
-
-	/** Get string representation of radio type
-	* @returns string containing the radio type (MTQ-H5, etc)
-	*/
-//	std::string getRadioType();
 
 	/** Cellular connect / context activation.
 	*
@@ -258,26 +207,6 @@ public:
         attach(Callback<void()>(obj, method));
     }
 
-    /**
-    * Get the MAC address of ESP8266
-    *
-    * @return null-terminated MAC address or null if no MAC address is assigned
-    */
-//    const char *getMACAddress(void);
-
-     /** Get the local gateway
-     *
-     *  @return         Null-terminated representation of the local gateway
-     *                  or null if no network mask has been recieved
-     */
-//    const char *getGateway();
-
-    /** Get the local network mask
-     *
-     *  @return         Null-terminated representation of the local network mask 
-     *                  or null if no network mask has been recieved
-     */
-//    const char *getNetmask();
 
     /** Open a socketed connection
     *

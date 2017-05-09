@@ -14,10 +14,6 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
     memset(_cbs, 0, sizeof(_cbs));
 }
 
-/*bool MTSCellularInterface::radioPower(Power option){
-    return true;
-}
-*/
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
     int result = _radio.pdpContext(apn);
     if (result == MTSCellularRadio::MTS_NOT_ALLOWED){
@@ -55,42 +51,11 @@ int MTSCellularInterface::disconnect(){
     }
     return NSAPI_ERROR_DEVICE_ERROR;
 }
-/*
-bool MTSCellularInterface::isConnected(){
-    return true;
-}
-*/
 
 const char *MTSCellularInterface::get_ip_address()
 {
     return _radio.getIPAddress().c_str();
 }
-
-/*
-const char *MTSCellularInterface::get_mac_address()
-{
-    return _radio.getMACAddress();
-}
-
-const char *MTSCellularInterface::get_gateway()
-{
-    return _radio.getGateway();
-}
-
-const char *MTSCellularInterface::get_netmask()
-{
-    return _radio.getNetmask();
-}
-
-
-void MTSCellularInterface::reset(){
-    return;
-}
-
-bool MTSCellularInterface::ping(const char *address){
-    return true;
-} 	
-*/	
 
 void MTSCellularInterface::logRadioStatus(){
     MTSCellularRadio::statusInfo radioStatus = _radio.getRadioStatus();

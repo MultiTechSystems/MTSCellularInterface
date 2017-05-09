@@ -60,17 +60,11 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 }
 
 
-//bool power(Power option);
-    
 /** Sets up the physical connection pins
 *   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
 */
 /*bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
     unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
-
-Code test(){
-    return MTS_SUCCESS;
-}
 */
 
 int MTSCellularRadio::getSignalStrength(){
@@ -114,12 +108,6 @@ int MTSCellularRadio::pdpContext(const std::string& apn){
     command.append("\"");
     return sendBasicCommand(command);
 }
-
- /*
-Code setDns(const std::string& primary, const std::string& secondary){
-    return MTS_SUCCESS;
-}
-*/
 
 int MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int timeoutMillis)
 {
@@ -175,37 +163,6 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     logInfo("response = %s", response.c_str());
     return response;
 }
-
-/*
-static std::string MTSCellularRadio::getRegistrationNames(Registration registration){
-    std::string result;
-    return result;
-}
-
-static std::string MTSCellularRadio::getRadioNames(Radio radio){
-    std::string result;
-    return result;
-}
-
-Code MTSCellularRadio::echo(bool state){
-    return MTS_SUCCESS;
-}
-
-std::string MTSCellularRadio::getDeviceIP(){
-    std::string result;
-    return result;
-}
-
-std::string MTSCellularRadio::getEquipmentIdentifier(){
-    std::string result;
-    return result;
-}
-
-std::string MTSCellularRadio::getRadioType(){
-    std::string result;
-    return result;
-}
-*/
 
 int MTSCellularRadio::connect(){
     logInfo("connecting context %s...", _cid.c_str());
@@ -389,23 +346,6 @@ std::string MTSCellularRadio::getIPAddress(void)
     return _ipAddress;
 }
 
-/*    
-const char *MTSCellularRadio::getMACAddress(void){
-    return 0;
-}
-
-    
-const char *MTSCellularRadio::getGateway()
-{
-    return 0;
-}
-    
-const char *MTSCellularRadio::getNetmask()
-{
-    return 0;
-}
-*/
-
 int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
     if (!isConnected()) {
@@ -545,11 +485,6 @@ bool MTSCellularRadio::isSocketOpen(int id)
     return false;
 }
 
-/*
-bool ping(const std::string& address){
-    return true;
-}
-*/
 
 MTSCellularRadio::statusInfo MTSCellularRadio::getRadioStatus()
 {
