@@ -99,6 +99,12 @@ public:
      * @returns true if ping received alive response else false
      */
 //    virtual bool ping(const char *address = "8.8.8.8"); 	
+
+    /** Gets information about the radio and prints it to the debug port.
+    *
+    * @returns 
+    */
+	void logRadioStatus();
 	
     /** This method is used to send an SMS message.
     *

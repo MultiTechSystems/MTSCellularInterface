@@ -92,6 +92,66 @@ bool MTSCellularInterface::ping(const char *address){
 } 	
 */	
 
+void MTSCellularInterface::logRadioStatus(){
+    MTSCellularRadio::statusInfo radioStatus = _radio.getRadioStatus();
+    // Radio model
+    logInfo("Radio model: %s", radioStatus.model.c_str());
+
+    // SIM status
+    if (radioStatus.sim) {
+        logInfo("SIM status: Inserted");
+    } else {
+        logInfo("SIM status: Not inserted");
+    }
+
+    // APN
+    logInfo("APN: \r\n%s", radioStatus.apn.c_str());
+
+    // Signal strength
+    logInfo("Signal strength: %d", radioStatus.rssi);
+
+    // Network registration
+    switch (radioStatus.registration) {
+        case MTSCellularRadio::NOT_REGISTERED:
+            logInfo("Network registration: not registered, not searching");
+            break;
+        case MTSCellularRadio::REGISTERED:
+            logInfo("Network registration: registered, home network");
+            break;
+        case MTSCellularRadio::SEARCHING:
+            logInfo("Network registration: not registered, searching");
+            break;
+        case MTSCellularRadio::DENIED:
+            logInfo("Network registration: registration denied");
+            break;
+        case MTSCellularRadio::UNKNOWN:
+            logInfo("Network registration: unknown");
+            break;
+        case MTSCellularRadio::ROAMING:
+            logInfo("Network registration: registered, roaming");
+    }
+
+    // Connection status and IP address if connected
+    if (radioStatus.connection) {
+        logInfo("Cellular connection: active");
+        logInfo("IP address: %s", radioStatus.ipAddress.c_str());
+    } else {
+        logInfo("Cellular connetion: not active");
+    }
+
+    // Socket status
+    logInfo("Socket status: \r\n%s", radioStatus.sockets.c_str());
+
+    // GPS
+    if (radioStatus.gps == 0) {
+        logInfo("GPS: disabled");
+    } else if (radioStatus.gps == 1) {
+        logInfo("GPS: enabled");
+    } else {
+        logInfo("GPS: not available");
+    }    
+}
+
 int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
     if (_radio.sendSMS(phoneNumber, message, messageSize) != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;

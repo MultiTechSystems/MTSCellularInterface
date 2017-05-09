@@ -80,7 +80,7 @@ int MTSCellularRadio::getSignalStrength(){
     }
     int start = response.find(':')+2;
     int stop = response.find(',');
-    std::string signal = response.substr(start, stop);
+    std::string signal = response.substr(start, stop-start);
     int rssi;
     sscanf(signal.c_str(), "%d", &rssi);
     return rssi;
@@ -97,7 +97,7 @@ int MTSCellularRadio::getRegistration(){
         return UNKNOWN;
     }
     int start = response.find(',')+1;
-    std::string regStat = response.substr(start, start+1);
+    std::string regStat = response.substr(start, 1);
     int networkReg;
     sscanf(regStat.c_str(), "%d", &networkReg);
     return networkReg;
@@ -282,6 +282,7 @@ int MTSCellularRadio::disconnect(){
     // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
     std::string id;
     char charCommand[16];
+    memset(charCommand, 0, sizeof(charCommand));
     for (int sockId = 1; sockId <= MAX_SOCKET_COUNT; sockId++){
         snprintf(charCommand, 16, "AT#SH=%d", sockId);
         sendBasicCommand(std::string(charCommand));
@@ -332,7 +333,7 @@ bool MTSCellularRadio::isConnected(){
         logError("Activation check failed, %s not found", reply.c_str());
         return false;
     }
-    std::string conStat = response.substr(pos+10, pos+11);
+    std::string conStat = response.substr(pos+10, 1);
     int contextAct;
     sscanf(conStat.c_str(), "%d", &contextAct);
     if (contextAct == 0) {
@@ -421,6 +422,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
     }
 
     char charCommand[64];
+    memset(charCommand, 0, sizeof(charCommand));
     if (type == "TCP") {
         snprintf(charCommand, 64, "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
     } else {
@@ -451,6 +453,7 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     sendBasicCommand("ATE0");
 
     char charCommand[16];
+    memset(charCommand, 0, sizeof(charCommand));
     snprintf(charCommand, 16, "AT#SSEND=%d", id);
     std::string response = sendCommand(std::string(charCommand));
     if (response.find("> ") != std::string::npos){
@@ -479,10 +482,12 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     }
 
     char charCommand[32];
+    memset(charCommand, 0, sizeof(charCommand));
     snprintf(charCommand, 32, "AT#SRECV=%d,%d", id, amount);
     std::string response = sendCommand(charCommand);
 
     char buf[16];
+    memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "#SRECV: %d", id);
     std::size_t pos = response.find(std::string(buf));
     if (pos == std::string::npos) {
@@ -499,6 +504,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 int MTSCellularRadio::close(int id)
 {
     char charCommand[16];
+    memset(charCommand, 0, sizeof(charCommand));
     snprintf(charCommand, 16, "AT#SH=%d", id);
     sendBasicCommand(charCommand, 2000);
 
@@ -516,6 +522,7 @@ bool MTSCellularRadio::isSocketOpen(int id)
 {
     std::string response = sendCommand("AT#SS");
     char buf[16];
+    memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "#SS: %d", id);
     std::size_t pos = response.find(std::string(buf));
     if (pos == std::string::npos) {
@@ -543,6 +550,58 @@ bool ping(const std::string& address){
     return true;
 }
 */
+
+MTSCellularRadio::statusInfo MTSCellularRadio::getRadioStatus()
+{
+    statusInfo radioInfo;
+    // Radio model
+    radioInfo.model = _radio_model;
+    
+    // SIM status
+    radioInfo.sim = isSIMinserted();
+    
+    // APN
+    std::string response;
+    response = sendCommand("AT+CGDCONT?");
+    std::size_t pos = response.find("+CGDCONT:");
+    response = response.substr(pos);
+    pos = response.find("\r\n\r\nOK\r\n");
+    response = response.substr(0, pos);
+    radioInfo.apn = response;
+
+    // Signal strength
+    radioInfo.rssi = getSignalStrength();
+    
+    // Registration
+    radioInfo.registration = getRegistration();
+
+    // Connection status
+    radioInfo.connection = isConnected();
+
+    // IP address
+    radioInfo.ipAddress = _ipAddress;
+    
+    // Socket status
+    response.clear();
+    response = sendCommand("AT#SS");
+    pos = response.find("#SS:");
+    response = response.substr(pos);
+    pos = response.find("\r\n\r\nOK\r\n");
+    response = response.substr(0, pos);    
+    radioInfo.sockets = response;
+
+    // GPS capability
+    response.clear();
+    response = sendCommand("AT$GPSP?");
+    if (response.find("ERROR")) {
+        radioInfo.gps = -1;
+    } else if (response.find("0")) {
+        radioInfo.gps = 0;
+    } else {
+        radioInfo.gps = 1;
+    }
+    return radioInfo;
+}
 
 int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int messageSize){
     if (sendBasicCommand("AT+CMGF=1") != MTS_SUCCESS) {

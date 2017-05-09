@@ -38,6 +38,19 @@ public:
 		MTS_NEED_APN = -9, MTS_MISSING_SIM = -10, MTS_NOT_ALLOWED = -11
 	};
 
+	// This structure contains the radio status information.
+    struct statusInfo {
+    	std::string model;
+        bool sim;
+        std::string apn;
+        uint8_t rssi;
+        uint8_t registration;
+        bool connection;
+		std::string ipAddress;
+        std::string sockets;
+        int gps;
+    };	
+
     // This structure contains the data from a received SMS message.
     struct Sms {
         // Message Phone Number
@@ -312,6 +325,13 @@ public:
 	 * Google DNS server used as default ping address
 	 * @returns true if ping received alive response else false
 	 */
+
+    /** Gathers much data about the radio and it's status.
+    *
+    * @returns a string containing all the radio information gathered.
+    */
+	statusInfo getRadioStatus();
+	
 //	virtual bool ping(const std::string& address = "8.8.8.8");	
 
     /** This method is used to send an SMS message. Note that you cannot send an
