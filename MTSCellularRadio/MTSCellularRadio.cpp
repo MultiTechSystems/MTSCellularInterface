@@ -34,25 +34,30 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         response = sendCommand("ATI4");
         if (response.find("HE910") != std::string::npos) {
             _type = MTQ_H5;
-            _radio_model = "MTQ-H5";
+            _MTSmodel = "MTQ-H5";
+            _modelID = "HE910";
         } else if (response.find("DE910") != std::string::npos) {
             _type = MTQ_EV3;
-            _radio_model = "MTQ-EV3";
+            _MTSmodel = "MTQ-EV3";
+            _modelID = "DE910";
         } else if (response.find("CE910") != std::string::npos) {
             _type = MTQ_C2;
-            _radio_model = "MTQ-C2";
+            _MTSmodel = "MTQ-C2";
+            _modelID = "CE910";
         } else if (response.find("LE910-NA1") != std::string::npos) {
             _type = MTQ_LAT3;
-            _radio_model = "MTQ-LAT3";
+            _MTSmodel = "MTQ-LAT3";
+            _modelID = "LE910-NA1";
         } else if (response.find("LE910-SV1") != std::string::npos) {
             _type = MTQ_LVW3;
             _cid = "3";
-            _radio_model = "MTQ-LVW3";
+            _MTSmodel = "MTQ-LVW3";
+            _modelID = "LE910-SV1";
         } else {
             logInfo("Determining radio model");
         }
         if (_type != MTSCellularRadio::NA) {
-            logInfo("radio model: %s", _radio_model.c_str());
+            logInfo("Radio model: %s", _MTSmodel.c_str());
             break;
         }
         wait(1);
@@ -168,7 +173,7 @@ int MTSCellularRadio::connect(){
     logInfo("connecting context %s...", _cid.c_str());
     //The apn must be configured for some radios or connect will not work.
     if ((_type == MTQ_H5 || _type == MTQ_LAT3) && !isAPNset()) {
-        logError("Can't connect. %s needs an APN.", _radio_model.c_str());
+        logError("Can't connect. %s needs an APN.", _MTSmodel.c_str());
         return MTS_NEED_APN;
     }
 
@@ -488,54 +493,79 @@ bool MTSCellularRadio::isSocketOpen(int id)
 
 MTSCellularRadio::statusInfo MTSCellularRadio::getRadioStatus()
 {
-    statusInfo radioInfo;
+    statusInfo radioStatus;
     // Radio model
-    radioInfo.model = _radio_model;
+    std::string radio;
+    std::string response;
+    radio = _MTSmodel;
+    radio.append(" (");
+    radio.append(_modelID);
+    radio.append(" fw:");
+    response = sendCommand("AT+CGMR");
+    std::size_t pos = response.find("\r\n\r\nOK");
+    if (pos != std::string::npos) {
+        response = response.substr(0, pos);
+        pos = response.find_first_not_of("AT+CGMR\r\n");
+        if (pos != std::string::npos) {
+            response = response.substr(pos);
+        }
+        radio.append(response);
+    }
+    radio.append(")");
+    radioStatus.model = radio;
     
     // SIM status
-    radioInfo.sim = isSIMinserted();
+    radioStatus.sim = isSIMinserted();
     
     // APN
-    std::string response;
+    response.clear();
     response = sendCommand("AT+CGDCONT?");
-    std::size_t pos = response.find("+CGDCONT:");
-    response = response.substr(pos);
+    pos = response.find("+CGDCONT:");
+    if (pos != std::string::npos) {
+        response = response.substr(pos);
+    }
     pos = response.find("\r\n\r\nOK\r\n");
-    response = response.substr(0, pos);
-    radioInfo.apn = response;
+    if (pos != std::string::npos) {
+        response = response.substr(0, pos);
+        radioStatus.apn = response;
+    }
 
     // Signal strength
-    radioInfo.rssi = getSignalStrength();
+    radioStatus.rssi = getSignalStrength();
     
     // Registration
-    radioInfo.registration = getRegistration();
+    radioStatus.registration = getRegistration();
 
     // Connection status
-    radioInfo.connection = isConnected();
+    radioStatus.connection = isConnected();
 
     // IP address
-    radioInfo.ipAddress = _ipAddress;
+    radioStatus.ipAddress = _ipAddress;
     
     // Socket status
     response.clear();
     response = sendCommand("AT#SS");
     pos = response.find("#SS:");
-    response = response.substr(pos);
+    if (pos != std::string::npos) {
+        response = response.substr(pos);
+    }
     pos = response.find("\r\n\r\nOK\r\n");
-    response = response.substr(0, pos);    
-    radioInfo.sockets = response;
+    if (pos != std::string::npos) {
+        response = response.substr(0, pos);    
+        radioStatus.sockets = response;
+    }
 
     // GPS capability
     response.clear();
     response = sendCommand("AT$GPSP?");
-    if (response.find("ERROR")) {
-        radioInfo.gps = -1;
-    } else if (response.find("0")) {
-        radioInfo.gps = 0;
+    if (response.find("ERROR") != std::string::npos) {
+        radioStatus.gps = -1;
+    } else if (response.find("0") != std::string::npos) {
+        radioStatus.gps = 0;
     } else {
-        radioInfo.gps = 1;
+        radioStatus.gps = 1;
     }
-    return radioInfo;
+    return radioStatus;
 }
 
 int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int messageSize){

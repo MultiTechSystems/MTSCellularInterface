@@ -25,6 +25,18 @@ int MTSCellularInterface::set_credentials(const char *apn, const char *username,
     return NSAPI_ERROR_OK;
 }
 
+int MTSCellularInterface::sendBasicCommand(const std::string& command, unsigned int timeoutMillis)
+{
+    if (_radio.sendBasicCommand(command, timeoutMillis) != MTSCellularRadio::MTS_SUCCESS) {
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;
+}
+
+std::string MTSCellularInterface::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc){
+    return _radio.sendCommand(command, timeoutMillis, esc);
+}
+
 int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
     int result = set_credentials(apn, username, password);
     if (result == NSAPI_ERROR_DEVICE_ERROR) {
@@ -59,8 +71,11 @@ const char *MTSCellularInterface::get_ip_address()
 
 void MTSCellularInterface::logRadioStatus(){
     MTSCellularRadio::statusInfo radioStatus = _radio.getRadioStatus();
+    // Opening banner
+    logInfo("************ Radio Information ************");
+    
     // Radio model
-    logInfo("Radio model: %s", radioStatus.model.c_str());
+    logInfo("Radio: %s", radioStatus.model.c_str());
 
     // SIM status
     if (radioStatus.sim) {
@@ -114,7 +129,9 @@ void MTSCellularInterface::logRadioStatus(){
         logInfo("GPS: enabled");
     } else {
         logInfo("GPS: not available");
-    }    
+    }
+    // Closing banner
+    logInfo("*******************************************");    
 }
 
 int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){

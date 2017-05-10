@@ -31,6 +31,28 @@ public:
     */
     virtual int set_credentials(const char *apn, const char *username = "", const char *password = "");
 
+    /** A method for sending a basic AT command to the radio. A basic AT command is
+	* one that simply has a response of OK or ERROR.
+	*
+	* @param command string to send to the radio.
+	* @param timeoutMillis the time in millis to wait for a response before returning. If
+	*   OK or ERROR are detected in the response the timer is short circuited.
+	* @returns 0 for success or a negative number for a failure.
+	*/
+	virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis = 1000);
+	
+    //Cellular Radio Specific
+    /** A method for sending AT commands to the radio.
+	*
+	* @param command string to send to the radio.
+	* @param timeoutMillis the time in millis to wait for a response before returning. If
+	*   OK or ERROR are detected in the response the timer is short circuited.
+	* @param esc escape character to add at the end of the command, defaults to
+	*   carriage return (CR).  Does not append any character if esc == 0.
+	* @returns a string containing the response to the command. The string will be empty upon failure.
+	*/
+    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
+
     /** Make cellular connection
     *
     *  @param apn      name of the network to connect to

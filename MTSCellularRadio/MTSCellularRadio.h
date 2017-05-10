@@ -331,7 +331,8 @@ protected:
 	std::string _ipAddress;
 
     Radio _type;				//The type of radio being used
-    std::string _radio_model;
+    std::string _MTSmodel;
+    std::string _modelID;
     std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
 
 	DigitalIn* radio_cts;	//Maps to the radio's cts signal
