@@ -232,7 +232,7 @@ public:
     * @param socket id
     * @param receive data buffer
     * @param amount of space in receive buffer
-    * @return amount of data loaded into receive buffer on success or negative value on failure.
+    * @return amount of data loaded into receive buffer on success or negative value on failure, 0 if nothing received.
     */
 	int receive(int id, void *data, uint32_t amount);
 

@@ -275,7 +275,7 @@ protected:
 	*  @param handle	   Socket handle
 	*  @param data       The buffer in which to store the data received from the host
 	*  @param size       The maximum length of the buffer
-	*  @return            Number of received bytes on success, negative on failure
+	*  @return            Number of received bytes on success, negative on failure, 0 if nothing received
 	*  @note This call is not-blocking, if this call would block, must
 	*		 immediately return NSAPI_ERROR_WOULD_WAIT
 	*/

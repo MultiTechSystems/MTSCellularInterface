@@ -22,8 +22,6 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 
     _serial.baud(115200);
 
-//    _parser.debugOn(1);
-
     // setup the battery circuit?
         //
         
@@ -137,15 +135,18 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     _parser.flush();
     std::string response;
 
-    logInfo("command = %s", command.c_str());
+//    logInfo("command = %s", command.c_str());
 
-    if (!_parser.send("%s", command.c_str())) {
-        logError("failed to send command <%s> to radio\r\n", command.c_str());
-        return response;    
+    // It sends cr/lf even if the command is empty... bad when you want to send CTRL-Z and get the response.
+    if (command.length() > 0){
+        if (!_parser.send("%s", command.c_str())) {
+            logError("Failed to send command <%s> to the radio.\r\n", command.c_str());
+            return response;    
+        }
     }
     if (esc != 0x00) {
         if (!_parser.send("%c", esc)) {
-            logError("failed to send character '%c' (0x%02X) to radio\r\n", esc, esc);
+            logError("Failed to send character '%c' (0x%02X) to the radio.\r\n", esc, esc);
             return response;
         }
     }
@@ -165,7 +166,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     }
     tmr.stop();
     
-    logInfo("response = %s", response.c_str());
+//    logInfo("response = %s", response.c_str());
     return response;
 }
 
@@ -189,10 +190,11 @@ int MTSCellularRadio::connect(){
         if (registration == REGISTERED || registration == ROAMING) {
             break;
         } else {
-            logTrace("Not Registered [%d] ... waiting", (int)registration);
+            logInfo("Not Registered [%d] ... waiting", (int)registration);
         }
         if (tmr.read() > 30) {
             tmr.stop();
+            logError("Connect timed out. Not registered.");
             return MTS_NOT_REGISTERED;
         }
         wait(1);
@@ -203,13 +205,14 @@ int MTSCellularRadio::connect(){
     do {
         int rssi = getSignalStrength();
         logDebug("Signal strength: %d", rssi);
-        if (rssi < 32 && rssi > 0) {
+        if (rssi < 32 && rssi >= 0) {
             break;            
         } else {
             logTrace("No Signal ... waiting");
         }
         if (tmr.read() > 30) {
             tmr.stop();
+            logError("Connect timed out. No signal.");
             return MTS_NO_SIGNAL;
         }
         wait(1);
@@ -223,14 +226,23 @@ int MTSCellularRadio::connect(){
     command.append(",1");
     std::string response = sendCommand(command, 10000);
 
-    std::size_t pos = response.find("#SGACT: ");
+    std::size_t pos = response.find("\r\n\r\nOK");
     if (pos == std::string::npos) {
+        logError("Activation command failed.");
+        return MTS_FAILURE;
+    }
+    response = response.substr(0, pos);
+    pos = response.find("#SGACT: ");
+    if (pos == std::string::npos) {
+        logError("Activation failed.");
         return MTS_FAILURE;
     }
     // Make sure it connected.
     if (!isConnected()) {
+        logError("Connection not activated.");
         return MTS_FAILURE;
     }
+
     std::string ipAddr = response.substr(pos+8);
     _ipAddress = ipAddr;
 
@@ -262,7 +274,7 @@ int MTSCellularRadio::disconnect(){
     bool connected = true;
     // I have seen the HE910 take as long as 1s to indicate disconnect. So check for a few seconds.
     while(tmr < 5){
-        wait_ms(200);
+        wait_ms(500);
         if (!isConnected()) {
             connected = false;
             break;
@@ -270,10 +282,10 @@ int MTSCellularRadio::disconnect(){
     }
     tmr.stop();
     if (connected) {
-        logInfo("failed to disconnect");
+        logError("Failed to disconnect radio.");
         return MTS_FAILURE;
     }
-    logInfo("disconnected");
+    logInfo("Radio disconnected.");
     _ipAddress.clear();
     return MTS_SUCCESS;
 }
@@ -310,14 +322,14 @@ bool MTSCellularRadio::isSIMinserted()
         return true;
     }
     if (sendBasicCommand("AT#QSS=1") != MTS_SUCCESS) {
-        logWarning("Query SIM status failed");
+        logWarning("Query SIM status failed.");
     }
     std::string response = sendCommand("AT#QSS?");
     if (response.find("OK") == std::string::npos) {
-        logWarning("Query SIM status failed");
+        logWarning("Query SIM status failed.");
     }
     if (response.find("1,0") != std::string::npos) {
-        logError("SIM not inserted");
+        logError("SIM not inserted.");
         return false;
     }
     return true;
@@ -332,14 +344,14 @@ bool MTSCellularRadio::isAPNset()
     for (int i = 0; i < 3; i++) {
         pos = response.find(delimiter);
         if (pos == std::string::npos) {
-            logWarning("APN not found");
+            logWarning("APN not found.");
             return false;
         }        
         apn = response.substr(0, pos);
         response.erase(0, pos + delimiter.length());
     }
     if (apn.size() < 3) {
-        logWarning("APN is not set");
+        logWarning("APN is not set.");
         return false;
     }
     logInfo("APN = %s", apn.c_str()); 
@@ -354,15 +366,17 @@ std::string MTSCellularRadio::getIPAddress(void)
 int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
     if (!isConnected()) {
+        logError("Can't open socket %d. No cellular connection.", id);
         return MTS_NO_CONNECTION;
     }
 
-    if(id > MAX_SOCKET_COUNT) {
+    if (id > MAX_SOCKET_COUNT) {
+        logError("Can't open socket %d. Max socket count reached.", id);
         return MTS_FAILURE;
     }
 
     if (isSocketOpen(id)) {
-        logInfo("socket[%d] already open", id);
+        logInfo("Socket %d already open.", id);
         return MTS_SUCCESS;
     }
 
@@ -375,10 +389,10 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
     }
     std::string response = sendCommand(std::string(charCommand), 65000);
     if (response.find("OK") == std::string::npos){
-        logInfo("open failed");
+        logError("socket %d open failed", id);
         return MTS_FAILURE;
     }
-    logInfo("open success");
+    logInfo("socket %d opened", id);
     return MTS_SUCCESS;
 }
 
@@ -386,9 +400,11 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
     if (!isConnected()){
+        logError("Can't send on socket %d. No cellular connection.", id);
         return MTS_NO_CONNECTION;
     }
     if (!isSocketOpen(id)){
+        logError("Can't send. Sockett %d closed.", id);
         return MTS_SOCKET_CLOSED;
     }
     
@@ -404,9 +420,10 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     if (response.find("> ") != std::string::npos){
         count = _parser.write((const char*)data, amount);
     }
+    response.clear();
     response = sendCommand("", 5000, CTRL_Z);
-
-    if (response.find("OK") != std::string::npos){
+    if (response.find("OK") == std::string::npos){
+        logError("Command AT#SSEND=%d failed.", id);
         count = MTS_FAILURE;
     }
 
@@ -420,28 +437,38 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 {   
     if (!isConnected()){
+        logError("Can't receive on socket %d. No cellular connection.", id);
         return MTS_NO_CONNECTION;
     }
     if (!isSocketOpen(id)){
+        logError("Can't receive. Sockett %d closed.", id);
         return MTS_SOCKET_CLOSED;
     }
 
+    // Send command to receive up to 'amount' characters.
     char charCommand[32];
     memset(charCommand, 0, sizeof(charCommand));
     snprintf(charCommand, 32, "AT#SRECV=%d,%d", id, amount);
     std::string response = sendCommand(charCommand);
-
-    char buf[16];
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "#SRECV: %d", id);
-    std::size_t pos = response.find(std::string(buf));
+    
+    // Look for OK response. If nothing to receive, it will give an ERROR instead of OK.
+    std::size_t pos = response.find("\r\n\r\nOK");
     if (pos == std::string::npos) {
-        return MTS_FAILURE;
+        return 0;
     }
-    response = response.substr(pos);
-    int connId, count;
-    sscanf(response.c_str(), "#SRECV: %d,%d %s", &connId, &count, data);
 
+    // Strip trailing \r\n\r\nOK\r\n from response.
+    response = response.substr(0, pos);
+
+    // Find count in '#SRECV: id, count'.
+    response = response.substr(response.find("#SRECV: "));
+    int connId, count;
+    sscanf(response.c_str(), "#SRECV: %d,%d", &connId, &count);
+
+    // Get just the data out of the response
+    response = response.substr(response.size()-count);
+    memcpy(data, (void *)response.c_str(), count);
+    
     return count;
 }
 
@@ -454,14 +481,13 @@ int MTSCellularRadio::close(int id)
     sendBasicCommand(charCommand, 2000);
 
     if (!isSocketOpen(id)) {
-        logInfo("socket[%d] closed", id);
+        logInfo("Socket %d closed.", id);
         return MTS_SUCCESS;
     }
 
-    logError("socket close failed");
+    logError("Socket %d not closed.", id);
     return MTS_FAILURE;
 }
-
 
 bool MTSCellularRadio::isSocketOpen(int id)
 {
@@ -471,20 +497,19 @@ bool MTSCellularRadio::isSocketOpen(int id)
     snprintf(buf, sizeof(buf), "#SS: %d", id);
     std::size_t pos = response.find(std::string(buf));
     if (pos == std::string::npos) {
-        logWarning("failed to read socket status");
+        logWarning("Failed to read socket status.");
         return false;
     }
     response = response.substr(pos);
     pos = response.find(",");
     if (pos == std::string::npos) {
-        logWarning("failed to read socket status");
+        logWarning("Failed to read socket status.");
         return false;
     }    
     response = response.substr(pos);    
     int status;
     sscanf(response.c_str(), ",%d", &status);
     if (status != 0) {
-        logInfo ("socket not closed, state = %d", status);
         return true;
     }
     return false;
@@ -569,8 +594,10 @@ MTSCellularRadio::statusInfo MTSCellularRadio::getRadioStatus()
 }
 
 int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int messageSize){
-    if (sendBasicCommand("AT+CMGF=1") != MTS_SUCCESS) {
-        logWarning("CMGF failed to set text mode");
+    int result = sendBasicCommand("AT+CMGF=1");
+    if ( result != MTS_SUCCESS) {
+        logError("CMGF failed");
+        return result;
     }
 
     std::string command;
@@ -579,14 +606,17 @@ int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int 
     } else if (_type == MTQ_EV3 || _type == MTQ_C2 || _type == MTQ_LVW3) {
         command = "AT+CSMP=,4098,0,2";
     } else {
-        logError("unknown radio type [%d]", _type);
+        logError("Unknown radio type [%d].", _type);
         return MTS_FAILURE;
     }
-    
-    if (sendBasicCommand(command) != MTS_SUCCESS) {
-        logWarning("CSMP set text mode parameters failed");
+
+    result = sendBasicCommand(command);
+    if (result != MTS_SUCCESS) {
+        logError("CSMP failed [%s]", _MTSmodel.c_str());
+        return result;
     }
 
+    logInfo("Sending SMS to %s", phoneNumber);
     command = "AT+CMGS=\"+";
     command.append(phoneNumber);
     command.append("\",145");
@@ -598,7 +628,8 @@ int MTSCellularRadio::sendSMS(const char* phoneNumber, const char* message, int 
 
     if (response.find("+CMGS:") != std::string::npos) {
         return MTS_SUCCESS;
-    }        
+    }
+    logError("CMGS message failed");
     return MTS_FAILURE;
 }
 
