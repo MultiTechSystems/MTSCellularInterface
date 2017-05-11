@@ -131,24 +131,16 @@ int MTSCellularRadio::sendBasicCommand(const std::string& command, unsigned int 
 
 std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned int timeoutMillis, char esc)
 {
+//    logTrace("command = %s", command.c_str());
+
     _parser.setTimeout(200);
     _parser.flush();
+    _parser.setDelimiter(&esc);
     std::string response;
-
-//    logInfo("command = %s", command.c_str());
-
-    // It sends cr/lf even if the command is empty... bad when you want to send CTRL-Z and get the response.
-    if (command.length() > 0){
-        if (!_parser.send("%s", command.c_str())) {
-            logError("Failed to send command <%s> to the radio.\r\n", command.c_str());
-            return response;    
-        }
-    }
-    if (esc != 0x00) {
-        if (!_parser.send("%c", esc)) {
-            logError("Failed to send character '%c' (0x%02X) to the radio.\r\n", esc, esc);
-            return response;
-        }
+    
+    if (!_parser.send("%s", command.c_str())) {
+        logError("Failed to send command <%s> to the radio.\r\n", command.c_str());
+        return response;    
     }
 
     Timer tmr;
@@ -166,7 +158,7 @@ std::string MTSCellularRadio::sendCommand(const std::string& command, unsigned i
     }
     tmr.stop();
     
-//    logInfo("response = %s", response.c_str());
+//    logTrace("response = %s", response.c_str());
     return response;
 }
 
