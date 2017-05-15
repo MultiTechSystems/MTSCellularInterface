@@ -35,7 +35,7 @@ public:
 	enum Code {
 		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3, MTS_NO_CONNECTION = -4, 
 		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8, 
-		MTS_NEED_APN = -9, MTS_MISSING_SIM = -10, MTS_NOT_ALLOWED = -11
+		MTS_NEED_APN = -9, MTS_NOT_ALLOWED = -10, MTS_NOT_SUPPORTED = -11
 	};
 
 	// This structure contains the radio status information.
@@ -249,11 +249,12 @@ public:
 	*@return true if the socket is not closed otherwise return false.
 	*/
 	bool isSocketOpen(int id);
-	
-	/** Pings specified DNS or IP address
-	 * Google DNS server used as default ping address
-	 * @returns true if ping received alive response else false
-	 */
+
+    /** Gets the radio type.
+    *
+    *@returns the radio type.
+    */
+	int getRadioType();
 
     /** Gathers much data about the radio and it's status.
     *

@@ -72,21 +72,24 @@ const char *MTSCellularInterface::get_ip_address()
 void MTSCellularInterface::logRadioStatus(){
     MTSCellularRadio::statusInfo radioStatus = _radio.getRadioStatus();
     // Opening banner
+    logInfo("");    // "leading cr/lf"
     logInfo("************ Radio Information ************");
     
     // Radio model
     logInfo("Radio: %s", radioStatus.model.c_str());
 
-    // SIM status
-    if (radioStatus.sim) {
-        logInfo("SIM status: Inserted");
-    } else {
-        logInfo("SIM status: Not inserted");
+    if (_radio.getRadioType() != MTSCellularRadio::MTQ_C2 && _radio.getRadioType() != MTSCellularRadio::MTQ_EV3) {
+        // SIM status
+        if (radioStatus.sim) {
+            logInfo("SIM status: Inserted");
+        } else {
+            logInfo("SIM status: Not inserted");
+        }
+
+        // APN
+        logInfo("APN: \r\n%s", radioStatus.apn.c_str());
     }
-
-    // APN
-    logInfo("APN: \r\n%s", radioStatus.apn.c_str());
-
+    
     // Signal strength
     logInfo("Signal strength: %d", radioStatus.rssi);
 
@@ -131,7 +134,7 @@ void MTSCellularInterface::logRadioStatus(){
         logInfo("GPS: not available");
     }
     // Closing banner
-    logInfo("*******************************************");    
+    logInfo("*******************************************\r\n");
 }
 
 int MTSCellularInterface::sendSMS(const char *phoneNumber, const char *message, int messageSize){
@@ -161,6 +164,9 @@ int MTSCellularInterface::deleteOnlyReceivedReadSms(){
 }	
 
 int MTSCellularInterface::GPSenable(){
+    if (_radio.GPSenable() == MTSCellularRadio::MTS_NOT_SUPPORTED) {
+        return NSAPI_ERROR_UNSUPPORTED;
+    }
     if (_radio.GPSenable() != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
@@ -168,6 +174,9 @@ int MTSCellularInterface::GPSenable(){
 }
 
 int MTSCellularInterface::GPSdisable(){
+    if (_radio.GPSdisable() == MTSCellularRadio::MTS_NOT_SUPPORTED) {
+        return NSAPI_ERROR_UNSUPPORTED;
+    }    
     if (_radio.GPSdisable() != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
@@ -297,12 +306,35 @@ int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
     }
 }
 
-int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size){
-    return 0;
+int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size) {
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+
+    if (socket->connected && socket->addr != address) {
+        if (!_radio.close(socket->id)) {
+            return NSAPI_ERROR_DEVICE_ERROR;
+        }
+        socket->connected = false;
+    }
+
+    if (!socket->connected) {
+        int err = socket_connect(socket, address);
+        if (err < 0) {
+            return err;
+        }
+        socket->addr = address;
+    }
+    
+    return socket_send(socket, data, size);
 }
 
-int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size){
-    return 0;
+int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, void *data, unsigned size) {
+    struct cellular_socket *socket = (struct cellular_socket *)handle;
+    int ret = socket_recv(socket, data, size);
+    if (ret >= 0 && address) {
+        *address = socket->addr;
+    }
+
+    return ret;
 }
 
 void MTSCellularInterface::socket_attach(void *handle, void (*callback)(void *), void *data){
