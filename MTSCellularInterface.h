@@ -39,7 +39,7 @@ public:
 	*   OK or ERROR are detected in the response the timer is short circuited.
 	* @returns 0 for success or a negative number for a failure.
 	*/
-	virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis = 1000);
+	virtual int send_basic_command(const std::string& command, unsigned int timeoutMillis = 1000);
 	
     //Cellular Radio Specific
     /** A method for sending AT commands to the radio.
@@ -51,7 +51,7 @@ public:
 	*   carriage return (CR).  Does not append any character if esc == 0.
 	* @returns a string containing the response to the command. The string will be empty upon failure.
 	*/
-    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
+    virtual std::string send_command(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
     /** Make cellular connection
     *
@@ -80,37 +80,6 @@ public:
     */
     virtual const char *get_ip_address();
 
-    /** Get the internally stored MAC address
-    *	
-    *  @return             MAC address of the interface
-    */
-//    virtual const char *get_mac_address();
-
-     /** Get the local gateway
-     *
-     *  @return         Null-terminated representation of the local gateway
-     *                  or null if no network mask has been recieved
-     */
-//    virtual const char *get_gateway();
-
-    /** Get the local network mask
-     *
-     *  @return         Null-terminated representation of the local network mask
-     *                  or null if no network mask has been recieved
-     */
-     
-//    virtual const char *get_netmask();
-
-    /** Checks if the radio is connected to the cell network.
-    * Checks antenna signal, cell tower registration, and context activation
-    * before finally pinging (4 pings, 32 bytes each) to confirm PPP connection
-    * to network. Will return true if there is an open socket connection as well.
-    *
-    * @returns true if there is a PPP connection to the cell network, false
-    * if there is no PPP connection to the cell network.
-    */
-//    virtual bool isConnected();
-
     /** Resets the radio/modem.
     * Disconnects all active PPP and socket connections to do so.
     */
@@ -122,72 +91,86 @@ public:
      */
 //    virtual bool ping(const char *address = "8.8.8.8"); 	
 
-    /** Gets information about the radio and prints it to the debug port.
+    /** Gets information about the radio.
+    *
+    * @returns statusInfo.
+    */
+	MTSCellularRadio::statusInfo get_radio_status();
+
+
+    /** Gets information about the radio and logs it to the debug port.
     *
     * @returns 
     */
-	void logRadioStatus();
+	void log_radio_status();
 	
     /** This method is used to send an SMS message.
     *
     * @param phoneNumber the phone number to send the message to as a string.
     * @param message the text message to be sent.
-    * @param size of message to be sent.
-    *  @return 0 on success, negative error code on failure
+    * @returns 0 on success, negative error code on failure.
     */
-    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+    virtual int send_sms(const std::string& phoneNumber, const std::string& message);
+
+    /** This method is used to send an SMS message. Note that you cannot send an
+    * SMS message and have a data connection open at the same time.
+    *
+    * @param sms an Sms struct that contains all SMS transaction information.
+    * @returns 0 on success, negative error code on failure.
+    */
+    virtual int send_sms(const MTSCellularRadio::Sms& sms);
 
     /** This method retrieves all of the SMS messages currently available for
     * this phone number.
     *
     * @returns a vector of existing SMS messages each as an Sms struct.
     */
-    virtual std::vector<MTSCellularRadio::Sms> getReceivedSms();
+    virtual std::vector<MTSCellularRadio::Sms> get_received_sms();
 
     /** This method can be used to remove/delete all received SMS messages
     * even if they have never been retrieved or read.
     *
     *  @return 0 on success, negative error code on failure
     */
-    virtual int deleteAllReceivedSms();
+    virtual int delete_all_received_sms();
 
     /** This method can be used to remove/delete all received SMS messages
-    * that have been retrieved by the user through the getReceivedSms method.
+    * that have been retrieved by the user through the get_received_sms method.
     * Messages that have not been retrieved yet will be unaffected.
     *
     *  @return 0 on success, negative error code on failure
     */
-    virtual int deleteOnlyReceivedReadSms();	
+    virtual int delete_only_read_sms();	
 
     /** Enables GPS.
     *
     *  @return 0 on success, negative error code on failure
 	*/
-    virtual int GPSenable();
+    virtual int gps_enable();
 
     /** Disables GPS.
     *
     *  @return 0 on success, negative error code on failure
     */
-    virtual int GPSdisable();
+    virtual int gps_disable();
 
     /** Checks if GPS is enabled.
     *
     * @returns true if GPS is enabled, false if GPS is disabled.
     */
-    virtual bool GPSenabled();
+    virtual bool is_gps_enabled();
         
     /** Get GPS position.
     *
     * @returns a structure containing the GPS data field information.
     */
-    virtual MTSCellularRadio::gpsData GPSgetPosition();
+    virtual MTSCellularRadio::gpsData gps_get_position();
 
     /** Check for GPS fix.
     *
     * @returns true if there is a fix and false otherwise.
     */
-    virtual bool GPSgotFix();	
+    virtual bool gps_has_fix();	
 
 	/** Translates a hostname to an IP address with specific version
 	 *
@@ -334,7 +317,12 @@ private:
 		void *data;
 	} _cbs[MAX_SOCKET_COUNT+1];
 
-	
+    struct cellular_socket {
+    int id;
+    nsapi_protocol_t proto;
+    bool connected;
+    SocketAddress addr;
+    };
 };
 #endif //MTSCELLULARINTERFACE
 

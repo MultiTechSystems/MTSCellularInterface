@@ -46,7 +46,7 @@ public:
         uint8_t rssi;
         uint8_t registration;
         bool connection;
-		std::string ipAddress;
+		std::string ip_address;
         std::string sockets;
         int gps;
     };	
@@ -93,6 +93,13 @@ public:
 //    bool configureSignals(unsigned int CTS = NC, unsigned int RTS = NC, unsigned int DCD = NC, unsigned int DTR = NC,
 //    	unsigned int RESET = NC, unsigned int DSR = NC, unsigned int RI = NC);
 
+    /** A static method for getting a string representation for the Registration
+    * enumeration.
+    *
+    * @param code a Registration enumeration.
+    * @returns the enumeration name as a string.
+    */
+    std::string get_registration_names(uint8_t registration);
 
     /** A method for getting the signal strength of the radio. This method allows you to
 	* get a value that maps to signal strength in dBm. Here 0-1 is Poor, 2-9 is Marginal,
@@ -101,14 +108,14 @@ public:
 	*
 	* @returns an integer representing the signal strength or -1 if command fails.
 	*/
-    virtual int getSignalStrength();
+    virtual int get_signal_strength();
 
     /** This method is used to check the registration state of the radio with the cell tower.
 	* If not appropriatley registered with the tower you cannot make a cellular connection.
 	*
 	* @returns the registration state as an enumeration type or -1 if the command fails.
 	*/
-    virtual int getRegistration();
+    virtual int get_registration();
 
     /** This method is used to configure the radio PDP context. Some radio models require
     * the APN be set correctly before it can make a data connection. The APN for your SIM
@@ -117,7 +124,7 @@ public:
 	* @param the APN as a string.
 	* @returns 0 on success, a negative value upon failure.
 	*/
-    virtual int pdpContext(const std::string& apn);
+    virtual int set_pdp_context(const std::string& apn);
 
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
@@ -135,7 +142,7 @@ public:
 	*   OK or ERROR are detected in the response the timer is short circuited.
 	* @returns 0 for success or a negative number for a failure.
 	*/
-	virtual int sendBasicCommand(const std::string& command, unsigned int timeoutMillis = 1000);
+	virtual int send_basic_command(const std::string& command, unsigned int timeoutMillis = 1000);
 	
     //Cellular Radio Specific
     /** A method for sending AT commands to the radio.
@@ -147,7 +154,7 @@ public:
 	*   carriage return (CR).  Does not append any character if esc == 0.
 	* @returns a string containing the response to the command. The string will be empty upon failure.
 	*/
-    virtual std::string sendCommand(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
+    virtual std::string send_command(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
 
 	/** Cellular connect / context activation.
@@ -168,26 +175,26 @@ public:
     *
     * @returns true if connected, false if disconnected.
     */
-    virtual bool isConnected();
+    virtual bool is_connected();
 
     /** Checks if the radio's SIM is inserted
     *
     * @returns true if inserted or radio does not require a SIM card, false if not inserted.
     */
-	virtual bool isSIMinserted();
+	virtual bool is_sim_inserted();
 
     /** Checks if the radio's APN is set
     *
     * @returns true if set, false if empty.
     */
-	virtual bool isAPNset();
+	virtual bool is_apn_set();
 
     /**
     * Get the radio's IP address
     *
     * @return a string containing the IP address or an empty string if no IP address is assigned
     */
-    std::string getIPAddress(void);
+    std::string get_ip_address(void);
 
     /**
     * Attach a function to call whenever network state has changed
@@ -260,90 +267,89 @@ public:
     *
     * @returns a string containing all the radio information gathered.
     */
-	statusInfo getRadioStatus();
+	statusInfo get_radio_status();
 	
 //	virtual bool ping(const std::string& address = "8.8.8.8");	
 
-    /** This method is used to send an SMS message. Note that you cannot send an
-    * SMS message and have a data connection open at the same time.
+    /** This method is used to send an SMS message.
     *
     * @param phoneNumber the phone number to send the message to as a string.
     * @param message the text message to be sent.
     * @param size of the message to be sent.
-    * @returns the standard AT Code enumeration.
+    * @returns 0 on success otherwise a negative value.
     */
-    virtual int sendSMS(const char *phoneNumber, const char *message, int messageSize);
+    virtual int send_sms(const std::string&  phoneNumber, const std::string& message);
 
     /** This method retrieves all of the SMS messages currently available for
     * this phone number.
     *
     * @returns a vector of existing SMS messages each as an Sms struct.
     */
-    virtual std::vector<Sms> getReceivedSms();
+    virtual std::vector<Sms> get_received_sms();
 
     /** This method can be used to remove/delete all received SMS messages
     * even if they have never been retrieved or read.
     *
-    * @return 0 on success otherwise a negative value.
+    * @returns 0 on success otherwise a negative value.
     */
-    virtual int deleteAllReceivedSms();
+    virtual int delete_all_received_sms();
 
     /** This method can be used to remove/delete all received SMS messages
-    * that have been retrieved by the user through the getReceivedSms method.
+    * that have been retrieved by the user through the get_received_sms method.
     * Messages that have not been retrieved yet will be unaffected.
     *
-    * @return 0 on success otherwise a negative value.
+    * @returns 0 on success otherwise a negative value.
     */
-    virtual int deleteOnlyReceivedReadSms();	
+    virtual int delete_only_read_sms();	
 
     /** Enables GPS.
     *
-    *  @return 0 on success, negative error code on failure
+    *  @returns 0 on success, negative error code on failure
 	*/
-    virtual int GPSenable();
+    virtual int gps_enable();
 
     /** Disables GPS.
     *
-    *  @return 0 on success, negative error code on failure
+    *  @returns 0 on success, negative error code on failure
     */
-    virtual int GPSdisable();
+    virtual int gps_disable();
 
     /** Checks if GPS is enabled.
     *
     * @returns true if GPS is enabled, false if GPS is disabled.
     */
-    virtual bool GPSenabled();
+    virtual bool is_gps_enabled();
         
     /** Get GPS position.
     *
     * @returns a structure containing the GPS data field information.
     */
-    virtual gpsData GPSgetPosition();
+    virtual gpsData gps_get_position();
 
     /** Check for GPS fix.
     *
     * @returns true if there is a fix and false otherwise.
     */
-    virtual bool GPSgotFix();	
+    virtual bool gps_has_fix();	
 
 protected:
 	BufferedSerial _serial;
 	ATParser _parser;
-	std::string _ipAddress;
+	std::string _ip_address;
 
     Radio _type;				//The type of radio being used
-    std::string _MTSmodel;
-    std::string _modelID;
+    std::string _mts_model;
+    std::string _manufacturer_model;
     std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
 
-	DigitalIn* radio_cts;	//Maps to the radio's cts signal
-	DigitalOut* radio_rts;	//Maps to the radio's rts signal
-    DigitalIn* radio_dcd;	//Maps to the radio's dcd signal
-    DigitalIn* radio_dsr;	//Maps to the radio's dsr signal
-    DigitalIn* radio_ri;	//Maps to the radio's ring indicator signal
-    DigitalOut* radio_dtr;	//Maps to the radio's dtr signal
+	DigitalIn* _radio_cts;	//Maps to the radio's cts signal
+	DigitalOut* _radio_rts;	//Maps to the radio's rts signal
+    DigitalIn* _radio_dcd;	//Maps to the radio's dcd signal
+    DigitalIn* _radio_dsr;	//Maps to the radio's dsr signal
+    DigitalIn* _radio_ri;	//Maps to the radio's ring indicator signal
+    DigitalOut* _radio_dtr;	//Maps to the radio's dtr signal
 
-    DigitalOut* resetLine;	//Maps to the radio's reset signal 
+    DigitalOut* _reset_line;	//Maps to the radio's reset signal 
 };
 
 #endif // MTSCELLULARRADIO_H
