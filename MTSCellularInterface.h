@@ -106,11 +106,11 @@ public:
 	
     /** This method is used to send an SMS message.
     *
-    * @param phoneNumber the phone number to send the message to as a string.
+    * @param phone_number the phone number to send the message to as a string.
     * @param message the text message to be sent.
     * @returns 0 on success, negative error code on failure.
     */
-    virtual int send_sms(const std::string& phoneNumber, const std::string& message);
+    virtual int send_sms(const std::string& phone_number, const std::string& message);
 
     /** This method is used to send an SMS message. Note that you cannot send an
     * SMS message and have a data connection open at the same time.

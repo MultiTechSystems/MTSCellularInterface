@@ -83,7 +83,7 @@ void MTSCellularInterface::log_radio_status(){
     // Radio model
     logInfo("Radio: %s", radioStatus.model.c_str());
 
-    if (_radio.getRadioType() != MTSCellularRadio::MTQ_C2 && _radio.getRadioType() != MTSCellularRadio::MTQ_EV3) {
+    if (_radio.get_radio_type() != MTSCellularRadio::MTQ_C2 && _radio.get_radio_type() != MTSCellularRadio::MTQ_EV3) {
         // SIM status
         if (radioStatus.sim) {
             logInfo("SIM status: Inserted");
@@ -124,8 +124,8 @@ void MTSCellularInterface::log_radio_status(){
     logInfo("*******************************************\r\n");
 }
 
-int MTSCellularInterface::send_sms(const std::string& phoneNumber, const std::string& message){
-    if (_radio.send_sms(phoneNumber, message) != MTSCellularRadio::MTS_SUCCESS) {
+int MTSCellularInterface::send_sms(const std::string& phone_number, const std::string& message){
+    if (_radio.send_sms(phone_number, message) != MTSCellularRadio::MTS_SUCCESS) {
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
@@ -133,7 +133,7 @@ int MTSCellularInterface::send_sms(const std::string& phoneNumber, const std::st
 
 int MTSCellularInterface::send_sms(const MTSCellularRadio::Sms& sms)
 {
-    return send_sms(sms.phoneNumber, sms.message);
+    return send_sms(sms.phone_number, sms.message);
 }
 
 std::vector<MTSCellularRadio::Sms> MTSCellularInterface::get_received_sms(){

@@ -54,7 +54,7 @@ public:
     // This structure contains the data from a received SMS message.
     struct Sms {
         // Message Phone Number
-        std::string phoneNumber;
+        std::string phone_number;
         // Message Body
         std::string message;
         // Message Timestamp
@@ -255,13 +255,13 @@ public:
 	*@param id is the socket to check.
 	*@return true if the socket is not closed otherwise return false.
 	*/
-	bool isSocketOpen(int id);
+	bool is_socket_open(int id);
 
     /** Gets the radio type.
     *
     *@returns the radio type.
     */
-	int getRadioType();
+	int get_radio_type();
 
     /** Gathers much data about the radio and it's status.
     *
@@ -273,12 +273,12 @@ public:
 
     /** This method is used to send an SMS message.
     *
-    * @param phoneNumber the phone number to send the message to as a string.
+    * @param phone_number the phone number to send the message to as a string.
     * @param message the text message to be sent.
     * @param size of the message to be sent.
     * @returns 0 on success otherwise a negative value.
     */
-    virtual int send_sms(const std::string&  phoneNumber, const std::string& message);
+    virtual int send_sms(const std::string&  phone_number, const std::string& message);
 
     /** This method retrieves all of the SMS messages currently available for
     * this phone number.
@@ -340,7 +340,8 @@ protected:
     Radio _type;				//The type of radio being used
     std::string _mts_model;
     std::string _manufacturer_model;
-    std::string _cid;		//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    std::string _cid;			//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
+    std::string _registration_cmd;
 
 	DigitalIn* _radio_cts;	//Maps to the radio's cts signal
 	DigitalOut* _radio_rts;	//Maps to the radio's rts signal
