@@ -35,7 +35,7 @@ public:
 	enum Code {
 		MTS_SUCCESS = 0, MTS_ERROR = -1, MTS_FAILURE = -2, MTS_NO_RESPONSE = -3, MTS_NO_CONNECTION = -4, 
 		MTS_NO_SOCKET = -5, MTS_SOCKET_CLOSED = -6, MTS_NOT_REGISTERED = -7, MTS_NO_SIGNAL = -8, 
-		MTS_NEED_APN = -9, MTS_NOT_ALLOWED = -10, MTS_NOT_SUPPORTED = -11
+		MTS_NO_APN = -9, MTS_NOT_ALLOWED = -10, MTS_NOT_SUPPORTED = -11, MTS_NO_SIM = -12
 	};
 
 	// This structure contains the radio status information.
@@ -46,7 +46,7 @@ public:
         uint8_t rssi;
         uint8_t registration;
         bool connection;
-		std::string ip_address;
+        std::string ip_address;
         std::string sockets;
         int gps;
     };	

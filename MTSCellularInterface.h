@@ -91,6 +91,13 @@ public:
      */
 //    virtual bool ping(const char *address = "8.8.8.8"); 	
 
+    /** Checks radio registration.
+    *
+    * @returns true if registered or roaming else false
+    */
+    bool is_registered();
+
+
     /** Gets information about the radio.
     *
     * @returns statusInfo.

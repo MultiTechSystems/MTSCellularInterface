@@ -69,6 +69,15 @@ const char *MTSCellularInterface::get_ip_address()
     return _radio.get_ip_address().c_str();
 }
 
+bool MTSCellularInterface::is_registered()
+{
+    int registration = _radio.get_registration();
+    if (registration == MTSCellularRadio::REGISTERED || registration == MTSCellularRadio::ROAMING){
+        return true;
+    }    
+    return false;
+}
+
 MTSCellularRadio::statusInfo MTSCellularInterface::get_radio_status()
 {
     return _radio.get_radio_status();
@@ -99,7 +108,7 @@ void MTSCellularInterface::log_radio_status(){
     logInfo("Signal strength: %d", radioStatus.rssi);
 
     // Network registration
-    logInfo("%s", _radio.get_registration_names(radioStatus.registration).c_str());
+    logInfo("Registration: %s", _radio.get_registration_names(radioStatus.registration).c_str());
 
     // Connection status and IP address if connected
     if (radioStatus.connection) {

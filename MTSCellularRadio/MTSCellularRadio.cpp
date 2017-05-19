@@ -183,87 +183,61 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
 }
 
 int MTSCellularRadio::connect(){
-    logInfo("Request to activate context %s...", _cid.c_str());
-    //The apn must be configured for some radios or connect will not work.
-    if ((_type == MTQ_H5 || _type == MTQ_LAT3) && !is_apn_set()) {
-        logError("Can't connect. %s needs an APN.", _mts_model.c_str());
-        return MTS_NEED_APN;
-    }
-
-    if(is_connected()) {
-        return MTS_SUCCESS;
-    }
-    
-    Timer tmr;
-    //Check Registration
-    tmr.start();
-    do {
-        Registration registration = (Registration)get_registration();
-        if (registration == REGISTERED || registration == ROAMING) {
-            break;
-        } else {
-            logInfo("Not Registered [%d] ... waiting", (int)registration);
-        }
-        if (tmr.read() > 30) {
-            tmr.stop();
-            logError("Connect timed out. Not registered.");
-            return MTS_NOT_REGISTERED;
-        }
-        wait(1);
-    } while(1); 
-    
-    //Check RSSI: AT+CSQ
-    tmr.reset();
-    do {
-        int rssi = get_signal_strength();
-        logDebug("Signal strength: %d", rssi);
-        if (rssi < 32 && rssi >= 0) {
-            break;            
-        } else {
-            logTrace("No Signal ... waiting");
-        }
-        if (tmr.read() > 30) {
-            tmr.stop();
-            logError("Connect timed out. No signal.");
-            return MTS_NO_SIGNAL;
-        }
-        wait(1);
-    } while(1);
-    tmr.stop();
-
+    int return_value = MTS_SUCCESS;    
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
     std::string command = "AT#SGACT=";
+    std::string response;
     command.append(_cid);
     command.append(",1");
-    std::string response = send_command(command, 10000);
-
+    response = send_command(command, 10000);
     std::size_t pos = response.find("\r\n\r\nOK");
     if (pos == std::string::npos) {
-        logError("Activation command failed.");
-        return MTS_FAILURE;
-    }
-    response = response.substr(0, pos);
-    pos = response.find("#SGACT: ");
-    if (pos == std::string::npos) {
-        logError("Activation failed.");
-        return MTS_FAILURE;
-    }
-    // Make sure it connected.
-    if (!is_connected()) {
-        logError("Connection not activated.");
-        return MTS_FAILURE;
-    }
-
-    std::string ip_addr = response.substr(pos+8);
-    _ip_address = ip_addr;
-
-    logInfo("Activated context %s; IP = %s", _cid.c_str(), ip_addr.c_str());
-    return MTS_SUCCESS;
+        if(is_connected()) {
+            // Do nothing, return_value already == MTS_SUCCESS.
+            // Also there's no IP address to parse from response.
+            logInfo("Already activated.");
+        } else if (!is_sim_inserted()) {
+        // Some radios require a SIM.
+            logError("Activation failed: no SIM.");
+            return_value = MTS_NO_SIM;        
+        } else if ((_type == MTQ_H5 || _type == MTQ_LAT3) && !is_apn_set()) {
+        // Some radios require and APN.
+            logError("Activation failed: no APN.");
+            return_value = MTS_NO_APN;
+        } else {
+            //Check Registration
+            Registration registration = (Registration)get_registration();
+            if (registration != REGISTERED || registration != ROAMING) {
+                logError("Activation failed: not registered.");
+                return_value = MTS_NOT_REGISTERED;
+            } else {
+                //Check RSSI: AT+CSQ
+                int rssi = get_signal_strength();
+                if (rssi == 99) {
+                    logError("Activation failed: no signal.");
+                    return MTS_NO_SIGNAL;
+                } else {
+                    logError("Activation failed: signal = %d.", rssi);
+                    return_value = MTS_NO_CONNECTION;
+                }
+            }
+        }
+    } else {
+        if(!is_connected()) {
+            logError("Activation failed.");
+            return_value = MTS_NO_CONNECTION;
+        } else {
+            response = response.substr(0, pos);     //strip trailing \r\n\r\nOK\r\n
+            pos = response.find("#SGACT: ");
+            std::string ip_addr = response.substr(pos+8);
+            _ip_address = ip_addr;
+            logInfo("Activated context %s; IP = %s", _cid.c_str(), ip_addr.c_str());        
+        }
+    }   
+    return return_value;
 }
 
 int MTSCellularRadio::disconnect(){
-    logInfo("disconnecting...");
-    
     // Make sure all sockets are closed or AT#SGACT=x,0 will ERROR.
     std::string id;
     char char_command[16];
@@ -284,7 +258,7 @@ int MTSCellularRadio::disconnect(){
     tmr.start();
     bool connected = true;
     // I have seen the HE910 take as long as 1s to indicate disconnect. So check for a few seconds.
-    while(tmr < 5){
+    while(tmr.read() < 5){
         wait_ms(500);
         if (!is_connected()) {
             connected = false;
@@ -302,10 +276,6 @@ int MTSCellularRadio::disconnect(){
 }
 
 bool MTSCellularRadio::is_connected(){
-    if (!is_sim_inserted()) {
-        return false;
-    }
-
     std::string response = send_command("AT#SGACT?");
     if (response.find("OK") == std::string::npos) {
         logError("Activation check failed");
@@ -379,21 +349,10 @@ std::string MTSCellularRadio::get_ip_address(void)
 
 int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
 {
-    if (!is_connected()) {
-        logError("Can't open socket %d. No cellular connection.", id);
-        return MTS_NO_CONNECTION;
-    }
-
     if (id > MAX_SOCKET_COUNT) {
-        logError("Can't open socket %d. Max socket count reached.", id);
+        logError("Socket[%d] open failed. Max socket count reached.", id);
         return MTS_FAILURE;
     }
-
-    if (is_socket_open(id)) {
-        logInfo("Socket %d already open.", id);
-        return MTS_SUCCESS;
-    }
-
     char char_command[64];
     memset(char_command, 0, sizeof(char_command));
     std::string str_type = type;
@@ -404,26 +363,26 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
         snprintf(char_command, 64, "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
     }
     std::string response = send_command(std::string(char_command), 65000);
-    if (response.find("OK") == std::string::npos){
-        logError("socket %d open failed", id);
-        return MTS_FAILURE;
+    if (response.find("OK") != std::string::npos){
+        logInfo("Socket[%d] opened", id);
+        return MTS_SUCCESS;
     }
-    logInfo("socket %d opened", id);
-    return MTS_SUCCESS;
+
+    if (is_socket_open(id)) {
+        logInfo("Socket[%d] already open.", id);
+        return MTS_SUCCESS;
+    }
+    if (!is_connected()) {
+        logError("Socket[%d] open failed. No cellular connection.", id);
+        return MTS_NO_CONNECTION;
+    }
+    logError("Socket[%d] open failed", id);
+    return MTS_FAILURE;    
 }
 
 
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
-    if (!is_connected()){
-        logError("Can't send on socket %d. No cellular connection.", id);
-        return MTS_NO_CONNECTION;
-    }
-    if (!is_socket_open(id)){
-        logError("Can't send. Socket %d closed.", id);
-        return MTS_SOCKET_CLOSED;
-    }
-    
     int count = 0;
     //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
     send_basic_command("ATE0");
@@ -439,7 +398,13 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     response = send_command("", 5000, CTRL_Z);
     if (response.find("OK") == std::string::npos){
         logError("Command AT#SSEND=%d failed.", id);
-        count = MTS_FAILURE;
+        if (!is_socket_open(id)){
+            logError("Send failed. Socket %d closed.", id);
+            count = MTS_SOCKET_CLOSED;
+        } else {
+            logError("Send failed.", id);
+            count = MTS_FAILURE;
+        }
     }
 
     // re-enable echo.
@@ -451,15 +416,6 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 
 int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 {   
-    if (!is_connected()){
-        logError("Can't receive on socket %d. No cellular connection.", id);
-        return MTS_NO_CONNECTION;
-    }
-    if (!is_socket_open(id)){
-        logError("Can't receive. Socket %d closed.", id);
-        return MTS_SOCKET_CLOSED;
-    }
-
     // Send command to receive up to 'amount' characters.
     char char_command[32];
     memset(char_command, 0, sizeof(char_command));
@@ -469,18 +425,20 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     // Look for OK response. If nothing to receive, it will give an ERROR instead of OK.
     std::size_t pos = response.find("\r\n\r\nOK");
     if (pos == std::string::npos) {
+        if (!is_socket_open(id)){
+            logError("Receive failed. Socket %d closed.", id);
+            return MTS_SOCKET_CLOSED;
+        }
         return 0;
     }
 
     // Strip trailing \r\n\r\nOK\r\n from response.
     response = response.substr(0, pos);
-
     // Find count in '#SRECV: id, count'.
     response = response.substr(response.find("#SRECV: "));
     int connId, count;
     sscanf(response.c_str(), "#SRECV: %d,%d", &connId, &count);
-
-    // Get just the data out of the response
+    // Get just the data out of the response.
     response = response.substr(response.size()-count);
     memcpy(data, (void *)response.c_str(), count);
     
