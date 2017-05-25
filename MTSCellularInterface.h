@@ -22,6 +22,34 @@ public:
 //	virtual bool radioPower(Power option);
 
 
+    /** A method to enable power to the radio. Turns on the radio power regulator.
+    * If the regulator is already enabled, it just check for 1.8v and OK response from AT.
+    *
+    * @param timeout amount of time to wait for 1.8v and OK response for AT.
+    * @returns true if 1.8v is high and AT responds with OK, else false.
+    */
+    virtual bool power_on(int timeout = 15);
+
+    /** A method to safely power off the radio. 
+    * 1. Close sockets and disconnect from cellular network.
+    * 2. Issue shutdown command. Note: Shutdown is recommended before removing power.
+    * 3. If the shutdown command is not successful and 1.8v is still high...
+    *     A. Try an I/O shutdown (radio ONOFF I/O) and wait for 1.8v to go low.
+    *     B. If that fails, try radio I/O reset (radio RESET I/O) and wait for 1.8v to go low. 
+    *     C. If 1.8v low or timed out, remove radio power.
+    * 4. If shutdown command worked and 1.8v goes low, remove radio power.
+    * 5. For CE910 a 30s delay is required even though 1.8v goes low.
+    *
+    * @returns 0 on success else a negative value.
+    */	
+    virtual int power_off();
+
+    /** A method to check if the radio is powered off. Check 1.8v from the radio and 3.8v to the radio.
+    *
+    * @returns true if 3.8v is high, else false.
+    */
+    virtual bool is_powered();
+
     /** Set the cellular network APN and credentials
     *
     *  @param apn      name of the network to connect to
@@ -95,21 +123,21 @@ public:
     *
     * @returns true if registered or roaming else false
     */
-    bool is_registered();
+    virtual bool is_registered();
 
 
     /** Gets information about the radio.
     *
     * @returns statusInfo.
     */
-	MTSCellularRadio::statusInfo get_radio_status();
+	virtual MTSCellularRadio::statusInfo get_radio_status();
 
 
     /** Gets information about the radio and logs it to the debug port.
     *
     * @returns 
     */
-	void log_radio_status();
+	virtual void log_radio_status();
 	
     /** This method is used to send an SMS message.
     *

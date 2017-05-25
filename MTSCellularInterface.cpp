@@ -14,6 +14,19 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*,
     memset(_cbs, 0, sizeof(_cbs));
 }
 
+bool MTSCellularInterface::power_on(int timeout){
+    return _radio.power_on(timeout);
+}
+  
+int MTSCellularInterface::power_off(){
+    _radio.power_off();
+    return NSAPI_ERROR_OK;
+}
+
+bool MTSCellularInterface::is_powered(){
+    return _radio.is_powered();
+}
+
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
     int result = _radio.set_pdp_context(apn);
     if (result == MTSCellularRadio::MTS_NOT_ALLOWED){

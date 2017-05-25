@@ -13,7 +13,7 @@ const char CR	  = 0x0D;	//Carriage Return
 const char LF	  = 0x0A;	//Line Feed
 const char CTRL_Z = 0x1A;	//Control-Z
 
-#define MAX_SOCKET_COUNT 2
+#define MAX_SOCKET_COUNT 6
 
 class MTSCellularRadio
 {
@@ -86,7 +86,34 @@ public:
 		std::string timestamp;
 	};   
 
-    	
+    /** A method to enable power to the radio. Turns on the radio power regulator.
+    * If the regulator is already enabled, it just check for 1.8v and OK response from AT.
+    *
+    * @param timeout amount of time to wait for 1.8v and OK response for AT.
+    * @returns true if 1.8v is high and AT responds with OK, else false.
+    */
+    bool power_on(int timeout = 15);
+
+    /** A method to safely power off the radio. 
+    * 1. Close sockets and disconnect from cellular network.
+    * 2. Issue shutdown command. Note: Shutdown is recommended before removing power.
+    * 3. If the shutdown command is not successful and 1.8v is still high...
+    *     A. Try an I/O shutdown (radio ONOFF I/O) and wait for 1.8v to go low.
+    *     B. If that fails, try radio I/O reset (radio RESET I/O) and wait for 1.8v to go low. 
+    *     C. If 1.8v low or timed out, remove radio power.
+    * 4. If shutdown command worked and 1.8v goes low, remove radio power.
+    * 5. For CE910 a 30s delay is required even though 1.8v goes low.
+    *
+    * @returns 0 on success else a negative value.
+    */	
+    int power_off();
+
+    /** A method to check if the radio is powered.
+    *
+    * @returns true if powered on false if off.
+    */
+    bool is_powered();
+	
 	/** Sets up the physical connection pins
 	*   (CTS, RTS, DCD, DTR, DSR, RI and RESET)
 	*/
@@ -342,9 +369,12 @@ protected:
     std::string _manufacturer_model;
     std::string _cid;			//context ID=1 for most radios. Verizon LTE LVW2&3 use cid 3.
     std::string _registration_cmd;
-
-	DigitalIn* _radio_cts;	//Maps to the radio's cts signal
-	DigitalOut* _radio_rts;	//Maps to the radio's rts signal
+	
+    DigitalIn* _vdd1_8;		//Maps to 1.8v from the radio.
+    DigitalOut* _radio_pwr;	//Maps to the 3.8v power regulator that powers the radio and tiny9.
+    DigitalOut* _3g_onoff;	//Maps to the tiny9 which controls the radio ON_OFF and HW_SHUTDOWN/RESET.
+    DigitalIn* _radio_cts;	//Maps to the radio's cts signal
+    DigitalOut* _radio_rts;	//Maps to the radio's rts signal
     DigitalIn* _radio_dcd;	//Maps to the radio's dcd signal
     DigitalIn* _radio_dsr;	//Maps to the radio's dsr signal
     DigitalIn* _radio_ri;	//Maps to the radio's ring indicator signal
