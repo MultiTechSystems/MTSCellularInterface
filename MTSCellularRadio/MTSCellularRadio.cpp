@@ -81,10 +81,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
 */
 
 bool MTSCellularRadio::power_on(int timeout){
-/* This can be used for MTQ boards prior to revision E where 3.8v to the tiny9 is not power by 3.8v.
-* Pulling this line low on power off then high on power on will result in a quick power up... ~12s vs up to ~77s.
     _3g_onoff->write(1);
-*/
     _radio_pwr->write(1);
     Timer tmr;
     tmr.start();
@@ -110,20 +107,18 @@ int MTSCellularRadio::power_off(){
     if (send_basic_command("AT#SHDN", 2000) != MTS_SUCCESS) {
         logWarning("Powering off using ON_OFF. AT#SHDN not successful.");
         _3g_onoff->write(0);
-        wait_ms(1500);
-        _3g_onoff->write(1);
+        wait(1);
         // look for 1.8 to be gone, pull 3.8 and return true.
     }
-    Timer tmr;
-    tmr.start();
     if (_type == MTQ_C2) {
-        while (tmr.read() < 30) {
-            wait(1);
-        }
+        wait(30);
     } else {
+        Timer tmr;
+        tmr.start();
         while (tmr.read() < 25 && _vdd1_8->read()) {
-            wait(1);
+            wait_ms(100);
         }
+        tmr.stop();
     }
     if (_vdd1_8->read()) {
         logWarning("Powering off with 1.8v still present.");
