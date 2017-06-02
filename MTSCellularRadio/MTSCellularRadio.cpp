@@ -108,7 +108,6 @@ int MTSCellularRadio::power_off(){
         logWarning("Powering off using ON_OFF. AT#SHDN not successful.");
         _3g_onoff->write(0);
         wait(1);
-        // look for 1.8 to be gone, pull 3.8 and return true.
     }
     if (_type == MTQ_C2) {
         wait(30);
@@ -123,7 +122,6 @@ int MTSCellularRadio::power_off(){
     if (_vdd1_8->read()) {
         logWarning("Powering off with 1.8v still present.");
     }
-    tmr.stop();
     _radio_pwr->write(0);
 /* This can be used for MTQ boards prior to revision E where 3.8v to the tiny9 is not power by 3.8v.
     if (board_rev != rev_E) {
@@ -452,17 +450,29 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
     send_basic_command("ATE0");
     logDebug("radio send: %s", data);
-    char char_command[16];
+    char char_command[32];
     memset(char_command, 0, sizeof(char_command));
-    snprintf(char_command, 16, "AT#SSEND=%d", id);
+    snprintf(char_command, 32, "AT#SSENDEXT=%d,%d", id, amount);
     std::string response = send_command(std::string(char_command));
     if (response.find("> ") != std::string::npos){
         count = _parser.write((const char*)data, amount);
     }
     response.clear();
-    response = send_command("", 5000, CTRL_Z);
+    Timer tmr;
+    tmr.start();
+    int c;
+    while(tmr.read_ms() < 1000) {
+        c = _parser.getc();
+        if (c > -1) {
+            response.append(1,c);
+            if ((response.find("\r\nOK\r\n")!= std::string::npos) || (response.find("\r\nERROR\r\n")!= std::string::npos)){
+                break;
+            }            
+        }
+    }
+    tmr.stop();    
     if (response.find("OK") == std::string::npos){
-        logError("Command AT#SSEND=%d failed.", id);
+        logError("Command AT#SSENDEXT=%d failed.", id);
         if (!is_socket_open(id)){
             logError("Send failed. Socket %d closed.", id);
             count = MTS_SOCKET_CLOSED;
