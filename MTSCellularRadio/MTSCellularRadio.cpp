@@ -416,6 +416,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
         logError("Socket[%d] open failed. Max socket count reached.", id);
         return MTS_FAILURE;
     }
+    disable_socket_inactivity_timer(id);
     char char_command[64];
     memset(char_command, 0, sizeof(char_command));
     std::string str_type = type;
@@ -443,6 +444,35 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
     return MTS_FAILURE;    
 }
 
+void MTSCellularRadio::disable_socket_inactivity_timer(int id){
+    //Read current settings for the socket.
+    std::string response = send_command("AT#SCFG?");
+    if (response.find("OK") == std::string::npos){
+        return;
+    }
+    //Strip it down to the settings for the given socket.
+    char char_command[32];
+    memset(char_command, 0, sizeof(char_command));
+    snprintf(char_command, 32, "#SCFG: %d", id);
+    std::size_t pos = response.find(char_command);
+    response = response.substr(pos+7);
+    pos = response.find_first_of("\r\n");
+    response = response.substr(0, pos);
+    //Build the command to set the inactivity timer.
+    std::string command = "AT#SCFG=";
+    command.append(response.substr(0,4));   //append connId and cid
+    response = response.substr(4);                 //erase connId and cid
+    pos = response.find(',');               //get to comma after packet size
+    command.append(response.substr(0,pos)); //append packet size
+    command.append(",0,");                    //append socket inactivity time
+    response = response.substr(pos+1);
+    pos = response.find(',');               //get to comma after packet size
+    response = response.substr(pos+1);
+    command.append(response);
+    //Write the value.
+    send_command(command);
+    return;
+}
 
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
@@ -452,7 +482,7 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     logDebug("radio send: %s", data);
     char char_command[32];
     memset(char_command, 0, sizeof(char_command));
-    snprintf(char_command, 32, "AT#SSENDEXT=%d,%d", id, amount);
+    snprintf(char_command, 32, "AT#SSENDEXT=%d,%lu", id, amount);
     std::string response = send_command(std::string(char_command));
     if (response.find("> ") != std::string::npos){
         count = _parser.write((const char*)data, amount);

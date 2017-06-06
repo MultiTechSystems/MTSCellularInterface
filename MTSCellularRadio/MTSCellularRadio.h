@@ -252,6 +252,13 @@ public:
     */
     int open(const char *type, int id, const char* addr, int port);
 
+
+    /** Disables the socket inactivity timer
+    *
+    * @param socket id
+    */
+	void disable_socket_inactivity_timer(int id);
+
     /** Send socket data
     *
     * @param socket id
