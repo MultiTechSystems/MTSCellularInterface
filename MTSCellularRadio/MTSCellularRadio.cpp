@@ -31,6 +31,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         
     // identify the radio "ATI4" gets us the model (HE910, DE910, etc)
     std::string response;
+    uint8_t count = 0;
     _type = MTSCellularRadio::NA;
     while (true) {
         response = send_command("ATI4");
@@ -63,6 +64,13 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
             
         } else {
             logInfo("Determining radio model");
+            if (count > 30 && _vdd1_8->read() == 0) {
+                logWarning("Radio not responding... cycling power.");
+                count = 0;
+                power_off();
+                wait(2);
+                power_on();
+            }
         }
         if (_type != MTSCellularRadio::NA) {
             logInfo("Radio model: %s", _mts_model.c_str());
@@ -340,8 +348,7 @@ int MTSCellularRadio::disconnect(){
 
 bool MTSCellularRadio::is_connected(){
     std::string response = send_command("AT#SGACT?");
-    if (response.find("OK") == std::string::npos) {
-        logError("Activation check failed");
+    if (response.find("ERROR") != std::string::npos) {
         return false;
     }
     std::string reply = "#SGACT: ";
