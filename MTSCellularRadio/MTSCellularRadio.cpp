@@ -714,7 +714,7 @@ int MTSCellularRadio::send_sms(const std::string& phone_number, const std::strin
     }
     response = send_command("", 15000, CTRL_Z);
 
-    if (response.find("+CMGS:") != std::string::npos) {
+    if (response.find("\r\nOK\r\n") != std::string::npos) {
         return MTS_SUCCESS;
     }
     logError("CMGS message failed");
