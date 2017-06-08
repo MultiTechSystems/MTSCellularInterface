@@ -103,7 +103,7 @@ bool MTSCellularRadio::power_on(int timeout){
         }
     }
     tmr.stop();
-    logError("Failed to power on radio.");
+    logWarning("Failed to power on radio.");
     return false;
 }
 
@@ -131,6 +131,7 @@ int MTSCellularRadio::power_off(){
         logWarning("Powering off with 1.8v still present.");
     }
     _radio_pwr->write(0);
+    _3g_onoff->write(0);    
 /* This can be used for MTQ boards prior to revision E where 3.8v to the tiny9 is not power by 3.8v.
     if (board_rev != rev_E) {
         _3g_onoff->write(0);
