@@ -209,6 +209,15 @@ bool MTSCellularInterface::gps_has_fix(){
     return _radio.gps_has_fix();    
 }	
 
+int MTSCellularInterface::gethostbyname(const char *name, SocketAddress *address, nsapi_version_t version){
+    std::string ip_address = _radio.gethostbyname(name);
+    if (ip_address.empty()) {
+        return NSAPI_ERROR_DNS_FAILURE;
+    }
+    address->set_ip_address(ip_address.c_str());
+    return NSAPI_ERROR_OK;
+}
+
 int MTSCellularInterface::socket_open(void **handle, nsapi_protocol_t proto){
     // Look for an unused socket
     int id = -1;
@@ -346,7 +355,6 @@ int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, 
 }
 
 void MTSCellularInterface::socket_attach(void *handle, void (*callback)(void *), void *data){
-    logInfo("MTSCellularInterface socket_attach called");    
     struct cellular_socket *socket = (struct cellular_socket *)handle;    
     _cbs[socket->id].callback = callback;
     _cbs[socket->id].data = data;

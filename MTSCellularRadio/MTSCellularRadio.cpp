@@ -224,7 +224,7 @@ int MTSCellularRadio::send_basic_command(const std::string& command, unsigned in
 
 std::string MTSCellularRadio::send_command(const std::string& command, unsigned int timeoutMillis, char esc)
 {
-//    logTrace("command = %s", command.c_str());
+    logTrace("command = %s", command.c_str());
 
     _parser.setTimeout(200);
     _parser.flush();
@@ -250,7 +250,7 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
     }
     tmr.stop();
     
-//    logTrace("response = %s", response.c_str());
+    logTrace("response = %s", response.c_str());
     return response;
 }
 
@@ -416,6 +416,22 @@ bool MTSCellularRadio::is_apn_set()
 std::string MTSCellularRadio::get_ip_address(void)
 {
     return _ip_address;
+}
+
+std::string MTSCellularRadio::gethostbyname(const char *name)
+{
+    char char_command[256];
+    memset(char_command, 0, sizeof(char_command));
+    snprintf(char_command, 64, "AT#QDNS=%s", name);
+    std::string response = send_command(char_command);
+    std::string ip_address;
+    if (response.find("OK") == std::string::npos){
+        return ip_address;
+    }
+    int start = response.find(',')+2;
+    int stop = response.find("\"\r\n");
+    ip_address = response.substr(start, stop-start);
+    return ip_address;    
 }
 
 int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)

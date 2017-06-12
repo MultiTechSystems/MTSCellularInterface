@@ -222,6 +222,8 @@ public:
 	 *	@return 		0 on success, negative error code on failure
 	 */
 //	using NetworkInterface::gethostbyname;
+    virtual int gethostbyname(const char *name, SocketAddress *address, nsapi_version_t version);
+
 
 	/** Add a domain name server to list of servers to query
 	 *

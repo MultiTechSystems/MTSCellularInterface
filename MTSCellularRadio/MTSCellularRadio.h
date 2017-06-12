@@ -7,6 +7,7 @@
 
 #include "ATParser.h"
 #include <string>
+#include <vector>
 
 //Special Payload Character Constants (ASCII Values)
 const char CR	  = 0x0D;	//Carriage Return
@@ -222,6 +223,14 @@ public:
     * @return a string containing the IP address or an empty string if no IP address is assigned
     */
     std::string get_ip_address(void);
+
+    /**
+    * Resolve the domain name given to an ip address.
+    *
+    * @param name is the domain name to be resolved.
+    * @return a string containing the IP address or an empty string if no IP address is assigned
+    */
+    std::string gethostbyname(const char *name);
 
     /**
     * Attach a function to call whenever network state has changed
