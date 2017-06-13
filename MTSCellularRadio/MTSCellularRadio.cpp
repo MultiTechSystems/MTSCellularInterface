@@ -255,6 +255,11 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
 }
 
 int MTSCellularRadio::connect(){
+    if (!is_apn_set()) {
+        // Some radios require and APN.
+        logError("Activation failed: no APN.");
+        return MTS_NO_APN;    
+    }
     int return_value = MTS_SUCCESS;    
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
     std::string command = "AT#SGACT=";
