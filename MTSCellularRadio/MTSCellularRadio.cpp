@@ -428,7 +428,7 @@ std::string MTSCellularRadio::gethostbyname(const char *name)
     char char_command[256];
     memset(char_command, 0, sizeof(char_command));
     snprintf(char_command, 64, "AT#QDNS=%s", name);
-    std::string response = send_command(char_command);
+    std::string response = send_command(char_command, 10000);
     std::string ip_address;
     if (response.find("OK") == std::string::npos){
         return ip_address;
