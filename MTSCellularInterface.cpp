@@ -77,6 +77,11 @@ int MTSCellularInterface::disconnect(){
     return NSAPI_ERROR_DEVICE_ERROR;
 }
 
+bool MTSCellularInterface::is_connected()
+{
+    return _radio.is_connected();
+}
+
 const char *MTSCellularInterface::get_ip_address()
 {
     return _radio.get_ip_address().c_str();

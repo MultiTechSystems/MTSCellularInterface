@@ -102,6 +102,13 @@ public:
     */
 	virtual int disconnect();
 
+    /** Checks if the radio is connected to the cell network.
+    * Checks context activation.
+    *
+    * @returns true if connected, false if disconnected.
+    */
+    virtual bool is_connected();
+
     /** Get the internally stored IP address
     *
     *  @return             IP address of the interface or null if not yet connected
