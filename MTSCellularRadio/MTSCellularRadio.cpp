@@ -440,7 +440,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
         logError("Socket[%d] open failed. Max socket count reached.", id);
         return MTS_FAILURE;
     }
-    disable_socket_inactivity_timer(id);
+    configure_socket(id);
     char char_command[64];
     memset(char_command, 0, sizeof(char_command));
     std::string str_type = type;
@@ -468,7 +468,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
     return MTS_FAILURE;    
 }
 
-void MTSCellularRadio::disable_socket_inactivity_timer(int id){
+void MTSCellularRadio::configure_socket(int id){
     //Read current settings for the socket.
     std::string response = send_command("AT#SCFG?");
     if (response.find("OK") == std::string::npos){
@@ -484,15 +484,23 @@ void MTSCellularRadio::disable_socket_inactivity_timer(int id){
     response = response.substr(0, pos);
     //Build the command to set the inactivity timer.
     std::string command = "AT#SCFG=";
-    command.append(response.substr(0,4));   //append connId and cid
-    response = response.substr(4);                 //erase connId and cid
-    pos = response.find(',');               //get to comma after packet size
-    command.append(response.substr(0,pos)); //append packet size
-    command.append(",0,");                    //append socket inactivity time
+    //append then erase connId and cid
+    command.append(response.substr(0,4));
+    response = response.substr(4);
+    //get to comma after packet size, append packet size, append socket inactivity timeout
+    pos = response.find(',');
+    command.append(response.substr(0,pos));
+    command.append(",0,");
     response = response.substr(pos+1);
-    pos = response.find(',');               //get to comma after packet size
+    //get to comma after inactivity timeout and remove it
+    pos = response.find(',');
     response = response.substr(pos+1);
-    command.append(response);
+    //get to comma after connection time out and append it
+    pos = response.find(',');
+    command.append(response.substr(0,pos));
+    response = response.substr(pos+1);
+    //set data sending timeout to 10ms
+    command.append(",256");
     //Write the value.
     send_command(command);
     return;
