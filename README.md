@@ -18,6 +18,12 @@ int main() {
 
     const char apn[] = "<your APN>";
 
+    // wait for registration
+    while(!radio->is_registered()){
+        wait(2);
+    }
+
+    // connect
     if (radio->connect(apn)) != NSAPI_ERROR_OK) {
         // connection failed - handle the failure
     }
@@ -28,5 +34,7 @@ int main() {
 ```
 
 The [Dragonfly-Examples](http://developer.mbed.org/teams/MultiTech/code/Dragonfly-Examples) repository demonstrates how to use common MTSCellularInterface features.
+
+The [MultiTech Dragonfly](http://developer.mbed.org/platforms/MTS-Dragonfly) mbed platform page has features, pinout information, and other documentation and resources.
 
 \* Not all radios support GPS. GPS location requires a lock on GPS satellites, which may not be possible indoors.
