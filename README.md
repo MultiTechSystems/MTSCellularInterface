@@ -2,6 +2,8 @@ The MTSCellularInterface library implements the mbed-os CellularInterface for th
 
 MTSCellularInterface provides TCP and UDP sockets, SMS messaging capabilities, and GPS location\*.
 
+After cloning this repository, run the setup script (setup.sh or setup.bat) to generate the version header and clone required dependencies.
+
 To get started with MTSCellularInterface, you just need a pointer to the library.
   * Most cellular radios require an APN string to be set before the radio can be used for SMS, TCP, etc.
   * The radio will not usually be able to connect until it is registered with the network.
