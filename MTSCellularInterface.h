@@ -22,6 +22,12 @@ public:
 //	virtual bool radioPower(Power option);
 
 
+    /** Get the version of the library currently in use
+    *
+    *  @return String containing the library version
+    */
+    virtual std::string get_library_version();
+
     /** A method to enable power to the radio. Turns on the radio power regulator.
     * If the regulator is already enabled, it just check for 1.8v and OK response from AT.
     *

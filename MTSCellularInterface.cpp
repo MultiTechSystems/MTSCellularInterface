@@ -4,6 +4,7 @@
 
 #include "MTSCellularInterface.h"
 #include "MTSLog.h"
+#include "mts_cellular_interface_version.h"
 
 // MTSCellularInterface implementation
 MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*, PinName rts, PinName cts,
@@ -371,5 +372,9 @@ void MTSCellularInterface::event() {
             _cbs[i].callback(_cbs[i].data);
         }
     }
+}
+
+std::string MTSCellularInterface::get_library_version() {
+    return MTS_CELLULAR_INTERFACE_VERSION;
 }
 
