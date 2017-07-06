@@ -2,8 +2,6 @@ The MTSCellularInterface library implements the mbed-os CellularInterface for th
 
 MTSCellularInterface provides TCP and UDP sockets, SMS messaging capabilities, and GPS location\*.
 
-**Versions 5.5.x of mbed-os are not currently supported by this library. We recommend using mbed-os-5.4.7.**
-
 After cloning this repository, run the setup script (setup.sh or setup.bat) to generate the version header and clone required dependencies.
 
 To get started with MTSCellularInterface, you just need a pointer to the library.
