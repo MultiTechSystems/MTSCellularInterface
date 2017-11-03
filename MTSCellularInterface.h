@@ -65,6 +65,14 @@ public:
     */
     virtual int set_credentials(const char *apn, const char *username = "", const char *password = "");
 
+    /** Set a PDP context
+    *
+    *  @param cgdcont_args string for AT+CGDCONT=<string> command (cid, pdp type, apn ...)
+    *  @return         0 on success, negative error code on failure
+    */
+//Future idea:    virtual int set_pdp_context(const char *cgdcont_args);
+	
+
     /** A method for sending a basic AT command to the radio. A basic AT command is
 	* one that simply has a response of OK or ERROR.
 	*
@@ -95,6 +103,13 @@ public:
     *  @return         0 on success, negative error code on failure
     */
     virtual int connect(const char *apn, const char *username = "", const char *password = "");
+
+    /** Make cellular connection
+    *
+    *  @param cid context id to establish connection on
+    *  @return         0 on success, negative error code on failure
+    */
+//Future idea:    virtual int connect(const char cid);
 	
     /** Make cellular connection
     *

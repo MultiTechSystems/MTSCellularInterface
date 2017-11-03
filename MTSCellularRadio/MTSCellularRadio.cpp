@@ -61,7 +61,16 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
             _mts_model = "MTQ-LVW3";
             _manufacturer_model = "LE910-SV1";
             _registration_cmd = "AT+CGREG?";
-            
+        } else if (response.find("ME910C1-NA") != std::string::npos) {
+            _type = MTQ_MAT1;
+            _mts_model = "MTQ-MAT1";
+            _manufacturer_model = "ME910C1-NA";
+            _registration_cmd = "AT+CGREG?";
+        } else if (response.find("ME910C1-NV") != std::string::npos) {
+            _type = MTQ_MVW1;
+            _mts_model = "MTQ-MVW1";
+            _manufacturer_model = "ME910C1-NV";
+            _registration_cmd = "AT+CGREG?";            
         } else {
             logInfo("Determining radio model");
             if (count > 30 && _vdd1_8->read() == 0) {
@@ -197,9 +206,15 @@ int MTSCellularRadio::set_pdp_context(const std::string& apn){
     if (_type == MTQ_C2 || _type == MTQ_EV3 || _type == MTQ_LVW3) {
         return MTS_NOT_ALLOWED;
     }
+    std::string pdp_type;
+    if (_type == MTQ_MAT1 || _type == MTQ_MVW1) {
+        pdp_type = ",\"IPV4V6\",\"";
+    } else {
+        pdp_type = ",\"IP\",\"";
+    }        
     std::string command = "AT+CGDCONT=";
     command.append(_cid);
-    command.append(",\"IP\",\"");
+    command.append(pdp_type);
     command.append(apn);
     command.append("\"");
     return send_basic_command(command);
@@ -282,13 +297,13 @@ int MTSCellularRadio::connect(){
             logError("Activation failed: no APN.");
             return_value = MTS_NO_APN;
         } else {
-            //Check Registration
+        //Check Registration
             Registration registration = (Registration)get_registration();
             if (registration != REGISTERED || registration != ROAMING) {
                 logError("Activation failed: not registered.");
                 return_value = MTS_NOT_REGISTERED;
             } else {
-                //Check RSSI: AT+CSQ
+            //Check RSSI: AT+CSQ
                 int rssi = get_signal_strength();
                 if (rssi == 99) {
                     logError("Activation failed: no signal.");
@@ -722,7 +737,7 @@ int MTSCellularRadio::send_sms(const std::string& phone_number, const std::strin
     }
 
     std::string command;
-    if (_type == MTQ_H5 || _type == MTQ_LAT3) {
+    if (_type == MTQ_H5 || _type == MTQ_LAT3 || _type == MTQ_MAT1 || _type == MTQ_MVW1) {
         command = "AT+CSMP=17,167,0,0";
     } else if (_type == MTQ_EV3 || _type == MTQ_C2 || _type == MTQ_LVW3) {
         command = "AT+CSMP=,4098,0,2";
@@ -777,7 +792,7 @@ std::vector<MTSCellularRadio::Sms> MTSCellularRadio::get_received_sms()
         }
         //Start of SMS message
         std::vector<std::string> vSmsParts = Text::split(line, ',');
-        if (_type == MTQ_H5 || _type == MTQ_LAT3) {
+        if (_type == MTQ_H5 || _type == MTQ_LAT3 || _type == MTQ_MAT1 || _type == MTQ_MVW1) {
             /* format for H5 and H5-IP radios
              * <index>, <status>, <oa>, <alpha>, <scts>
              * scts contains a comma, so splitting on commas should give us 6 items

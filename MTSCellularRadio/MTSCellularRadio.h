@@ -24,7 +24,7 @@ public:
 
     // Enumeration for different cellular radio types.
     enum Radio {
-        NA, MTQ_H5, MTQ_EV3, MTQ_C2, MTQ_LAT3, MTQ_LVW3
+        NA, MTQ_H5, MTQ_EV3, MTQ_C2, MTQ_LAT3, MTQ_LVW3, MTQ_MAT1, MTQ_MVW1
     };
 
     // An enumeration of radio registration states with a cell tower.
