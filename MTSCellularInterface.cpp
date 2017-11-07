@@ -29,7 +29,7 @@ bool MTSCellularInterface::is_powered(){
 }
 
 int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-    int result = _radio.set_pdp_context(apn);
+    int result = _radio.set_apn(apn);
     if (result == MTSCellularRadio::MTS_NOT_ALLOWED){
         return NSAPI_ERROR_UNSUPPORTED;
     }
@@ -37,6 +37,17 @@ int MTSCellularInterface::set_credentials(const char *apn, const char *username,
         return NSAPI_ERROR_DEVICE_ERROR;
     }
     return NSAPI_ERROR_OK;
+}
+
+int MTSCellularInterface::set_pdp_context(const char *cgdcont_args){
+    int result = _radio.set_pdp_context(cgdcont_args);
+    if (result == MTSCellularRadio::MTS_NOT_ALLOWED){
+        return NSAPI_ERROR_UNSUPPORTED;
+    }
+    if (result != MTSCellularRadio::MTS_SUCCESS){
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return NSAPI_ERROR_OK;    
 }
 
 int MTSCellularInterface::send_basic_command(const std::string& command, unsigned int timeoutMillis)
@@ -58,7 +69,19 @@ int MTSCellularInterface::connect(const char *apn, const char *username, const c
     }
     return connect();
 }
-    
+
+int MTSCellularInterface::connect(const char cid){
+    int result = _radio.connect(cid);
+    switch (result){
+        case MTSCellularRadio::MTS_FAILURE:
+            return NSAPI_ERROR_DEVICE_ERROR;
+        case MTSCellularRadio::MTS_SUCCESS:
+            return NSAPI_ERROR_OK;
+        default:
+            return NSAPI_ERROR_NO_CONNECTION;
+    }  
+}
+
 int MTSCellularInterface::connect(){
     int result = _radio.connect();
     switch (result){

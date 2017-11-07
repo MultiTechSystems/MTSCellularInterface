@@ -145,15 +145,24 @@ public:
 	*/
     virtual int get_registration();
 
-    /** This method is used to configure the radio PDP context. Some radio models require
-    * the APN be set correctly before it can make a data connection. The APN for your SIM
-	* can be obtained by contacting your cellular service provider.
-	*
-	* @param the APN as a string.
-	* @returns 0 on success, a negative value upon failure.
-	*/
-    virtual int set_pdp_context(const std::string& apn);
+    /** This method is used to configure the radio APN within a PDP context. Some radio models
+    * require the APN to be set correctly others come with predefined APNs that should not be changed.
+    * The APN for your SIM can be obtained by contacting your cellular service provider.
+    *
+    * @param the APN as a string.
+    * @returns 0 on success, a negative value upon failure.
+    */
+    virtual int set_apn(const std::string& apn);
 
+    /** This method is used to configure a radio PDP context. Some radio models require the
+    * APN to be set correctly others come with predefined APNs that should not be changed.
+    *
+    * @param cgdcont_args string for AT+CGDCONT=<string> command (cid, pdp type, apn ...)
+    *    expected format example = 1,"IP",apn
+    * @returns 0 on success, a negative value upon failure.
+    */
+    virtual int set_pdp_context(const std::string& cgdcont_args);
+	
     /** This method is used to set the DNS which enables the use of URLs instead
 	* of IP addresses when making a socket connection.
 	*
@@ -187,9 +196,10 @@ public:
 
 	/** Cellular connect / context activation.
 	*
+	* @param cid context ID to connect on. Use 'default' if left at 0.
 	* @returns 0 on connection success, else a negative value.
 	*/
-	virtual int connect();
+	virtual int connect(const char cid = 0);
     
     /** Cellular disconnect / context deactivation.	
     * Closes any and all sockets before disconnect

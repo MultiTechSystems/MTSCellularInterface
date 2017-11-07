@@ -202,7 +202,7 @@ int MTSCellularRadio::get_registration(){
     return networkReg;
 }
  
-int MTSCellularRadio::set_pdp_context(const std::string& apn){
+int MTSCellularRadio::set_apn(const std::string& apn){
     if (_type == MTQ_C2 || _type == MTQ_EV3 || _type == MTQ_LVW3) {
         return MTS_NOT_ALLOWED;
     }
@@ -219,6 +219,13 @@ int MTSCellularRadio::set_pdp_context(const std::string& apn){
     command.append("\"");
     return send_basic_command(command);
 }
+
+int MTSCellularRadio::set_pdp_context(const std::string& cgdcont_args){
+    std::string command = "AT+CGDCONT=";    
+    command.append(cgdcont_args);
+    return send_basic_command(command);
+}
+
 
 int MTSCellularRadio::send_basic_command(const std::string& command, unsigned int timeoutMillis)
 {
@@ -269,7 +276,16 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
     return response;
 }
 
-int MTSCellularRadio::connect(){
+int MTSCellularRadio::connect(const char cid){
+    std::string cid_str;
+    if (cid == 0) {
+        cid_str = _cid;
+    } else {
+        char buff[3];
+        sprintf(buff, "%d", (int)cid);
+        cid_str = std::string(buff);
+    }
+
     if (!is_apn_set()) {
         // Some radios require and APN.
         logError("Activation failed: no APN.");
@@ -279,7 +295,7 @@ int MTSCellularRadio::connect(){
     //Attempt context activation. Example successful response #SGACT: 50.28.201.151.
     std::string command = "AT#SGACT=";
     std::string response;
-    command.append(_cid);
+    command.append(cid_str);
     command.append(",1");
     response = send_command(command, 10000);
     std::size_t pos = response.find("\r\n\r\nOK");
@@ -323,7 +339,7 @@ int MTSCellularRadio::connect(){
             pos = response.find("#SGACT: ");
             std::string ip_addr = response.substr(pos+8);
             _ip_address = ip_addr;
-            logInfo("Activated context %s; IP = %s", _cid.c_str(), ip_addr.c_str());        
+            logInfo("Activated context %s; IP = %s", cid_str.c_str(), ip_addr.c_str());        
         }
     }   
     return return_value;
