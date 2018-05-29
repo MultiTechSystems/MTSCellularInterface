@@ -34,6 +34,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     uint8_t count = 0;
     _type = MTSCellularRadio::NA;
     while (true) {
+        count++;
         response = send_command("ATI4");
         if (response.find("HE910") != std::string::npos) {
             _type = MTQ_H5;
@@ -72,7 +73,8 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
             _manufacturer_model = "ME910C1-NV";
             _registration_cmd = "AT+CGREG?";            
         } else {
-            logInfo("Determining radio model");
+            logInfo("Determining radio model(%d)", count);
+            logTrace("_vdd1_8 = %d", _vdd1_8->read());
             if (count > 30 && _vdd1_8->read() == 0) {
                 logWarning("Radio not responding... cycling power.");
                 count = 0;
@@ -220,6 +222,13 @@ int MTSCellularRadio::set_apn(const std::string& apn){
     return send_basic_command(command);
 }
 
+void MTSCellularRadio::set_sim_pin(const char *sim_pin)
+{
+    std::string command = "AT+PIN=";
+    command.append(sim_pin);
+    send_basic_command(command);
+}
+
 int MTSCellularRadio::set_pdp_context(const std::string& cgdcont_args){
     std::string command = "AT+CGDCONT=";    
     command.append(cgdcont_args);
@@ -272,7 +281,7 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
     }
     tmr.stop();
     
-    logTrace("response = %s", response.c_str());
+    logTrace("response(%d bytes) = %s", response.length(), response.c_str());
     return response;
 }
 
@@ -454,11 +463,28 @@ std::string MTSCellularRadio::get_ip_address(void)
     return _ip_address;
 }
 
+std::string MTSCellularRadio::get_netmask()
+{
+    // Not implemented.
+    std::string netmask = "";
+    return netmask;
+
+}
+
+std::string MTSCellularRadio::get_gateway()
+{
+    // Not implemented.
+    std::string gateway = "";
+    return gateway;
+
+
+}
+
 std::string MTSCellularRadio::gethostbyname(const char *name)
 {
     char char_command[256];
     memset(char_command, 0, sizeof(char_command));
-    snprintf(char_command, 64, "AT#QDNS=%s", name);
+    snprintf(char_command, 256, "AT#QDNS=%s", name);
     std::string response = send_command(char_command, 30000);
     std::string ip_address;
     if (response.find("OK") == std::string::npos){

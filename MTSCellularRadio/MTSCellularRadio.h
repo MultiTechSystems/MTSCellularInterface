@@ -154,6 +154,13 @@ public:
     */
     virtual int set_apn(const std::string& apn);
 
+    /** Set the pin code for SIM card
+    *
+    *  @param sim_pin      PIN for the SIM card
+    */
+    virtual void set_sim_pin(const char *sim_pin);
+	
+
     /** This method is used to configure a radio PDP context. Some radio models require the
     * APN to be set correctly others come with predefined APNs that should not be changed.
     *
@@ -232,7 +239,21 @@ public:
     *
     * @return a string containing the IP address or an empty string if no IP address is assigned
     */
-    std::string get_ip_address(void);
+    virtual std::string get_ip_address(void);
+
+    /** Get the local network mask
+     *
+     *  @return         Null-terminated representation of the local network mask
+     *                  or null if no network mask has been received
+     */
+    virtual std::string get_netmask();
+
+    /** Get the local gateways
+    *
+    *  @return         Null-terminated representation of the local gateway
+    *                  or null if no network mask has been received
+    */
+    virtual std::string get_gateway();
 
     /**
     * Resolve the domain name given to an ip address.

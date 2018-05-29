@@ -28,15 +28,13 @@ bool MTSCellularInterface::is_powered(){
     return _radio.is_powered();
 }
 
-int MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
-    int result = _radio.set_apn(apn);
-    if (result == MTSCellularRadio::MTS_NOT_ALLOWED){
-        return NSAPI_ERROR_UNSUPPORTED;
-    }
-    if (result != MTSCellularRadio::MTS_SUCCESS){
-        return NSAPI_ERROR_DEVICE_ERROR;
-    }
-    return NSAPI_ERROR_OK;
+void MTSCellularInterface::set_credentials(const char *apn, const char *username, const char *password){
+    _radio.set_apn(apn);
+}
+
+void MTSCellularInterface::set_sim_pin(const char *sim_pin)
+{
+    _radio.set_sim_pin(sim_pin);
 }
 
 int MTSCellularInterface::set_pdp_context(const char *cgdcont_args){
@@ -62,11 +60,8 @@ std::string MTSCellularInterface::send_command(const std::string& command, unsig
     return _radio.send_command(command, timeoutMillis, esc);
 }
 
-int MTSCellularInterface::connect(const char *apn, const char *username, const char *password){
-    int result = set_credentials(apn, username, password);
-    if (result == NSAPI_ERROR_DEVICE_ERROR) {
-        return NSAPI_ERROR_DEVICE_ERROR;
-    }
+int MTSCellularInterface::connect(const char *sim_pin, const char *apn, const char *username, const char *password){
+    set_credentials(apn, username, password);
     return connect();
 }
 
@@ -109,6 +104,24 @@ bool MTSCellularInterface::is_connected()
 const char *MTSCellularInterface::get_ip_address()
 {
     return _radio.get_ip_address().c_str();
+}
+
+const char *MTSCellularInterface::get_netmask()
+{
+    std::string netmask = _radio.get_netmask();
+    if (netmask.size() == 0) {
+        return NULL;
+    }
+    return netmask.c_str();
+}
+
+const char *MTSCellularInterface::get_gateway()
+{
+    std::string gateway = _radio.get_gateway();
+    if (gateway.size() == 0) {
+        return NULL;
+    }
+    return gateway.c_str();
 }
 
 bool MTSCellularInterface::is_registered()

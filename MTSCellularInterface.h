@@ -8,7 +8,7 @@
 #include "mbed.h"
 #include "MTSCellularRadio.h"
 
-class MTSCellularInterface : public NetworkStack, public CellularInterface
+class MTSCellularInterface : public NetworkStack, public CellularBase
 {
 public:
 	MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX/*, PinName Radio_rts = NC, PinName Radio_cts = NC,
@@ -61,9 +61,14 @@ public:
     *  @param apn      name of the network to connect to
     *  @param user     Optional username for the APN
     *  @param pass     Optional password fot the APN
-    *  @return         0 on success, negative error code on failure
     */
-    virtual int set_credentials(const char *apn, const char *username = "", const char *password = "");
+    virtual void set_credentials(const char *apn, const char *username = "", const char *password = "");
+
+    /** Set the pin code for SIM card
+    *
+    *  @param sim_pin      PIN for the SIM card
+    */
+    virtual void set_sim_pin(const char *sim_pin);
 
     /** Set a PDP context
     *
@@ -97,12 +102,13 @@ public:
 
     /** Make cellular connection
     *
-    *  @param apn      name of the network to connect to
-    *  @param username Optional username for your APN
-    *  @param password Optional password for your APN 
-    *  @return         0 on success, negative error code on failure
+    *  @param sim_pin     PIN for the SIM card    
+    *  @param apn		  optionally, access point name
+    *  @param uname 	  optionally, Username
+    *  @param pwd		  optionally, password
+    *  @return			  NSAPI_ERROR_OK on success, or negative error code on failure
     */
-    virtual int connect(const char *apn, const char *username = "", const char *password = "");
+    virtual int connect(const char *sim_pin, const char *apn = "", const char *username = "", const char *password = "");
 
     /** Make cellular connection. Allows the user to override the default context ID for the radio.
     *
@@ -113,7 +119,9 @@ public:
 	
     /** Make cellular connection
     *
-    *  @return         0 on success, negative error code on failure
+    *  If the SIM requires a PIN, and it is not set/invalid, NSAPI_ERROR_AUTH_ERROR is returned.
+    *
+    *  @return			  NSAPI_ERROR_OK on success, or negative error code on failure
     */
 	virtual int connect();
      
@@ -135,6 +143,20 @@ public:
     *  @return             IP address of the interface or null if not yet connected
     */
     virtual const char *get_ip_address();
+
+    /** Get the local network mask
+    *
+    *  @return         Null-terminated representation of the local network mask
+    *                  or null if no network mask has been received
+    */
+    virtual const char *get_netmask();
+
+    /** Get the local gateways
+    *
+    *  @return         Null-terminated representation of the local gateway
+    *                  or null if no network mask has been received
+    */
+    virtual const char *get_gateway();
 
     /** Resets the radio/modem.
     * Disconnects all active PPP and socket connections to do so.
