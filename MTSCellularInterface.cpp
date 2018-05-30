@@ -356,6 +356,8 @@ int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
         return rcv;
     }
     switch (rcv) {
+        case 0:
+            return NSAPI_ERROR_WOULD_BLOCK;
         case MTSCellularRadio::MTS_NO_CONNECTION:
             return NSAPI_ERROR_NO_CONNECTION;
         case MTSCellularRadio::MTS_SOCKET_CLOSED:
