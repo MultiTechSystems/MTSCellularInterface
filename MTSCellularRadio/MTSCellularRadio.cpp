@@ -306,7 +306,8 @@ int MTSCellularRadio::connect(const char cid){
     std::string response;
     command.append(cid_str);
     command.append(",1");
-    response = send_command(command, 10000);
+    //PDP context activation timeout up to 150s per 3gpp
+    response = send_command(command, 60000);
     std::size_t pos = response.find("\r\n\r\nOK");
     if (pos == std::string::npos) {
         if(is_connected()) {

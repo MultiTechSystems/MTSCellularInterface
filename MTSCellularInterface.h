@@ -405,10 +405,10 @@ private:
 	} _cbs[MAX_SOCKET_COUNT+1];
 
     struct cellular_socket {
-    int id;
-    nsapi_protocol_t proto;
-    bool connected;
-    SocketAddress addr;
+        int id;
+        nsapi_protocol_t proto;
+        bool connected;
+        SocketAddress addr;
     };
 };
 #endif //MTSCELLULARINTERFACE
