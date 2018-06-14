@@ -623,26 +623,80 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     char char_command[32];
     memset(char_command, 0, sizeof(char_command));
     snprintf(char_command, 32, "AT#SRECV=%d,%lu", id, amount);
-    std::string response = send_command(char_command);
-    
-    // Look for OK response. If nothing to receive, it will give an ERROR instead of OK.
-    std::size_t pos = response.find("\r\n\r\nOK");
-    if (pos == std::string::npos) {
-        if (!is_socket_open(id)){
-            logError("Receive failed. Socket %d closed.", id);
-            return MTS_SOCKET_CLOSED;
+
+    _parser.setTimeout(200);
+    _parser.setDelimiter(&CR);
+    if (!_parser.send(char_command)) {
+        logError("Failed to send command <%s> to the radio.\r\n", char_command);
+        return 0;
+    } else {
+        logTrace("parser send = %s", char_command);
+    }
+
+    memset(char_command, 0, sizeof(char_command));
+    snprintf(char_command, 32, "#SRECV: %d,", id);
+    std::string response;
+    Timer tmr;
+    tmr.start();
+    int c;
+    // Removes leading /r/n
+    c = _parser.getc();
+    c = _parser.getc();
+    // Read up to #SRECV='socket' or ERROR in the response.    
+    while(tmr.read_ms() < 1000) {
+        c = _parser.getc();
+        if (c > -1) {
+            response.append(1,c);
+            if (response.find("\r\nERROR\r\n")!= std::string::npos) {
+                // AT#SRECV=1,16 returns ERROR not #SRECV if there is no data to be received.
+                tmr.stop();
+                logTrace("parser getc = %s", response.c_str());
+                return 0;
+            }
+            if ((response.find(char_command)!= std::string::npos) && (response.find("\r\n")!= std::string::npos)){
+                std::size_t pos = response.find(char_command);
+//                logInfo("pos = %d", pos);
+                if (pos == 0){
+                    // Expect response to hold "#SRECV: #,#\r\n"
+                    break;
+                } else {
+                    //remove URC "SRING: # \r\n" and echoed command "AT#SRECV=#,# \r\n"
+                    response.erase(0, pos);
+                }
+            }
         }
+    }
+    tmr.stop();
+    logTrace("parser getc = %s", response.c_str());
+
+    // Get the number of characters to read in.
+    std::size_t pos1 = response.find(",");
+    if (pos1 == std::string::npos) {
+        return 0;
+    }
+    std::size_t pos2 = response.find("\r");
+    if (pos2 == std::string::npos) {
         return 0;
     }
 
-    // Strip trailing \r\n\r\nOK\r\n from response.
-    response = response.substr(0, pos);
-    // Find count in '#SRECV: id, count'.
-    response = response.substr(response.find("#SRECV: "));
-    int connId, count;
-    sscanf(response.c_str(), "#SRECV: %d,%d", &connId, &count);
-    // Get just the data out of the response.
-    response = response.substr(response.size()-count);
+    std::string rcv_str;
+    rcv_str.assign(response.begin()+(pos1+1),response.begin()+pos2);
+    int rcv_count=0;
+    sscanf(rcv_str.c_str(), "%d", &rcv_count);
+
+    // Read the receive characters.
+    tmr.start();
+    int count = 0;
+    response.clear();
+    while((tmr.read_ms() < 1000) && (count < rcv_count)) {
+        c = _parser.getc();
+        if (c > -1) {
+            response.append(1,c);
+            count++;
+        }
+    }
+    tmr.stop();
+
     memcpy(data, (void *)response.c_str(), count);
     
     return count;
