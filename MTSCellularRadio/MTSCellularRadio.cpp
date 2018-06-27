@@ -232,8 +232,8 @@ void MTSCellularRadio::set_sim_pin(const char *sim_pin)
         command.clear();
         response.clear();
         command = "AT#PCT";
-        response = send_command(command)
-        if (response.find("0") || response.find("1") {
+        response = send_command(command);
+        if (response.find("0") || response.find("1")) {
             logWarning("SIM PIN required but remaining tries too low. Aborting set_sim_pin.");
             return;
         }        
@@ -241,7 +241,7 @@ void MTSCellularRadio::set_sim_pin(const char *sim_pin)
         command = "AT+PIN=";
         command.append(sim_pin);
         if (send_basic_command(command) == MTS_ERROR) {
-            logWarning("Wrong SIM PIN password. Too many tries can block SIM.")
+            logWarning("Wrong SIM PIN password. Too many tries can block SIM.");
         }
     }
 }
