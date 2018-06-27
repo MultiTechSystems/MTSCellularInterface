@@ -61,6 +61,7 @@ std::string MTSCellularInterface::send_command(const std::string& command, unsig
 }
 
 int MTSCellularInterface::connect(const char *sim_pin, const char *apn, const char *username, const char *password){
+    set_sim_pin(sim_pin);
     set_credentials(apn, username, password);
     return connect();
 }

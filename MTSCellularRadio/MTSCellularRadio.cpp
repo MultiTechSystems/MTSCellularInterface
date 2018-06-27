@@ -224,9 +224,26 @@ int MTSCellularRadio::set_apn(const std::string& apn){
 
 void MTSCellularRadio::set_sim_pin(const char *sim_pin)
 {
-    std::string command = "AT+PIN=";
-    command.append(sim_pin);
-    send_basic_command(command);
+    // Check status and only attempt to set SIM PIN if mobile device needs the SIM PIN and PIN counter is > 1.
+    std::string command = "AT+CPIN?";
+    std::string response = send_command(command);
+    if (response.find("SIM PIN")) {
+        // Check the PIN counter to see if another atttempt can be made. Stop before blocking.
+        command.clear();
+        response.clear();
+        command = "AT#PCT";
+        response = send_command(command)
+        if (response.find("0") || response.find("1") {
+            logWarning("SIM PIN required but remaining tries too low. Aborting set_sim_pin.");
+            return;
+        }        
+        command.clear();
+        command = "AT+PIN=";
+        command.append(sim_pin);
+        if (send_basic_command(command) == MTS_ERROR) {
+            logWarning("Wrong SIM PIN password. Too many tries can block SIM.")
+        }
+    }
 }
 
 int MTSCellularRadio::set_pdp_context(const std::string& cgdcont_args){
