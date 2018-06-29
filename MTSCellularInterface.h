@@ -11,9 +11,7 @@
 class MTSCellularInterface : public NetworkStack, public CellularBase
 {
 public:
-	MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX/*, PinName Radio_rts = NC, PinName Radio_cts = NC,
-		PinName Radio_dcd = NC,	PinName Radio_dsr = NC, PinName Radio_dtr = NC, PinName Radio_ri = NC,
-		PinName Radio_Power = NC, PinName Radio_Reset = NC*/);
+	MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX, int baud = 115200);
 
     /** Power the modem on or off.
     * Power off closes any open sockets, disconnects from the cellular network then powers the modem off.

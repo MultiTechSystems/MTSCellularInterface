@@ -7,9 +7,8 @@
 #include "mts_cellular_interface_version.h"
 
 // MTSCellularInterface implementation
-MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx/*, PinName rts, PinName cts,
-	PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
-	: _radio(Radio_tx, Radio_rx/*, rts, cts, dcd, dsr, dtr, ri, power, reset*/)
+MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx, int baud)
+	: _radio(Radio_tx, Radio_rx, baud)
 {
     memset(_ids, 0, sizeof(_ids));
     memset(_cbs, 0, sizeof(_cbs));

@@ -5,13 +5,15 @@
 #include "MTSCellularRadio.h"
 #include "MTSLog.h"
 #include "MTSText.h"
+#include "UARTSerial.h"
 
 using namespace mts;
 
-MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinName rts,
-    PinName dcd, PinName dsr, PinName dtr, PinName ri, PinName power, PinName reset*/)
-    : _serial(tx, rx, 1024), _parser(_serial), _cid("1")
+MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, int baud)
 {
+    _cid = "1";
+    _fh = new UARTSerial(tx, rx, baud);
+    _parser = new ATCmdParser(_fh);
 	_vdd1_8 = new DigitalIn(PC_5);
 	_radio_pwr = new DigitalOut(PC_3, 1);
 	_3g_onoff = new DigitalOut(PC_13, 1);
@@ -23,8 +25,6 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
     _radio_ri = NULL;
     _radio_dtr = NULL;
     _reset_line = NULL;
-
-    _serial.baud(115200);
 
     // setup the battery circuit?
         //
@@ -75,7 +75,7 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx/*, PinName cts, PinNam
         } else {
             logInfo("Determining radio model(%d)", count);
             logTrace("_vdd1_8 = %d", _vdd1_8->read());
-            if (count > 30 && _vdd1_8->read() == 0) {
+            if (count > 30) {
                 logWarning("Radio not responding... cycling power.");
                 count = 0;
                 power_off();
@@ -255,8 +255,8 @@ int MTSCellularRadio::set_pdp_context(const std::string& cgdcont_args){
 
 int MTSCellularRadio::send_basic_command(const std::string& command, unsigned int timeoutMillis)
 {
-    _parser.setTimeout(200);
-    _parser.flush();
+    _parser->set_timeout(200);
+    _parser->flush();
 
     std::string response = send_command(command, timeoutMillis);
     if (response.size() == 0) {
@@ -274,12 +274,12 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
 {
     logTrace("command = %s", command.c_str());
 
-    _parser.setTimeout(200);
-    _parser.flush();
-    _parser.setDelimiter(&esc);
+    _parser->set_timeout(200);
+    _parser->flush();
+    _parser->set_delimiter(&esc);
     std::string response;
     
-    if (!_parser.send("%s", command.c_str())) {
+    if (!_parser->send("%s", command.c_str())) {
         logError("Failed to send command <%s> to the radio.\r\n", command.c_str());
         return response;    
     }
@@ -288,7 +288,7 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
     tmr.start();
     int c;
     while(tmr.read_ms() < (int)timeoutMillis) {
-        c = _parser.getc();
+        c = _parser->getc();
         if (c > -1) {
             response.append(1,c);
             if ((response.find("\r\nOK\r\n")!= std::string::npos) || (response.find("\r\nERROR\r\n")!= std::string::npos)){
@@ -592,7 +592,7 @@ void MTSCellularRadio::configure_socket(int id){
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
     int count = 0;
-    //disable echo so we don't collect all the echoed characters sent. _parser.flush() is not clearing them.
+    //disable echo so we don't collect all the echoed characters sent. _parser->flush() is not clearing them.
     send_basic_command("ATE0");
     logDebug("radio send: %s", data);
     char char_command[32];
@@ -600,14 +600,14 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
     snprintf(char_command, 32, "AT#SSENDEXT=%d,%lu", id, amount);
     std::string response = send_command(std::string(char_command));
     if (response.find("> ") != std::string::npos){
-        count = _parser.write((const char*)data, amount);
+        count = _parser->write((const char*)data, amount);
     }
     response.clear();
     Timer tmr;
     tmr.start();
     int c;
     while(tmr.read_ms() < 1000) {
-        c = _parser.getc();
+        c = _parser->getc();
         if (c > -1) {
             response.append(1,c);
             if ((response.find("\r\nOK\r\n")!= std::string::npos) || (response.find("\r\nERROR\r\n")!= std::string::npos)){
@@ -641,9 +641,9 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     memset(char_command, 0, sizeof(char_command));
     snprintf(char_command, 32, "AT#SRECV=%d,%lu", id, amount);
 
-    _parser.setTimeout(200);
-    _parser.setDelimiter(&CR);
-    if (!_parser.send(char_command)) {
+    _parser->set_timeout(200);
+    _parser->set_delimiter(&CR);
+    if (!_parser->send(char_command)) {
         logError("Failed to send command <%s> to the radio.\r\n", char_command);
         return 0;
     } else {
@@ -657,11 +657,11 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     tmr.start();
     int c;
     // Removes leading /r/n
-    c = _parser.getc();
-    c = _parser.getc();
+    c = _parser->getc();
+    c = _parser->getc();
     // Read up to #SRECV='socket' or ERROR in the response.    
     while(tmr.read_ms() < 1000) {
-        c = _parser.getc();
+        c = _parser->getc();
         if (c > -1) {
             response.append(1,c);
             if (response.find("\r\nERROR\r\n")!= std::string::npos) {
@@ -706,7 +706,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     int count = 0;
     response.clear();
     while((tmr.read_ms() < 1000) && (count < rcv_count)) {
-        c = _parser.getc();
+        c = _parser->getc();
         if (c > -1) {
             response.append(1,c);
             count++;
@@ -872,7 +872,7 @@ int MTSCellularRadio::send_sms(const std::string& phone_number, const std::strin
     command.append("\",145");
     std::string response = send_command(command, 2000);
     if (response.find("> ") != std::string::npos) {
-        _parser.write(message.c_str(), message.size());
+        _parser->write(message.c_str(), message.size());
     }
     response = send_command("", 15000, CTRL_Z);
 

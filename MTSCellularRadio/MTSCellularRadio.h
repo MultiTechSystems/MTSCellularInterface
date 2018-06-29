@@ -5,9 +5,10 @@
 #ifndef MTSCELLULARRADIO_H
 #define MTSCELLULARRADIO_H
 
-#include "ATParser.h"
+#include "ATCmdParser.h"
 #include <string>
 #include <vector>
+#include "FileHandle.h"
 
 //Special Payload Character Constants (ASCII Values)
 const char CR	  = 0x0D;	//Carriage Return
@@ -19,8 +20,7 @@ const char CTRL_Z = 0x1A;	//Control-Z
 class MTSCellularRadio
 {
 public:
-	MTSCellularRadio(PinName tx, PinName rx/*, PinName Radio_rts, PinName Radio_cts, PinName Radio_dcd,
-		PinName Radio_dsr, PinName Radio_dtr, PinName Radio_ri, PinName Radio_Power, PinName Radio_Reset*/);
+	MTSCellularRadio(PinName tx, PinName rx, int baud);
 
     // Enumeration for different cellular radio types.
     enum Radio {
@@ -407,8 +407,8 @@ public:
     virtual bool gps_has_fix();	
 
 protected:
-	BufferedSerial _serial;
-	ATParser _parser;
+	FileHandle* _fh;
+	ATCmdParser* _parser;
 	std::string _ip_address;
 
     Radio _type;				//The type of radio being used
