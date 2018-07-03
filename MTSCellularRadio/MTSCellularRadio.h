@@ -407,9 +407,10 @@ public:
     virtual bool gps_has_fix();	
 
 protected:
-	FileHandle* _fh;
-	ATCmdParser* _parser;
-	std::string _ip_address;
+    FileHandle* _fh;
+    ATCmdParser* _parser;
+    std::string _ip_address;
+    Callback<void()> _socket_event;
 
     Radio _type;				//The type of radio being used
     std::string _mts_model;
@@ -428,6 +429,11 @@ protected:
     DigitalOut* _radio_dtr;	//Maps to the radio's dtr signal
 
     DigitalOut* _reset_line;	//Maps to the radio's reset signal 
+
+private:
+// Event thread for asynchronous received data(+SRING) and socket/connection disconnect (NO CARRIER).
+//    3GPP defines +SRING and NO CARRIER URCs.	
+	void handle_urc_event();	
 };
 
 #endif // MTSCELLULARRADIO_H

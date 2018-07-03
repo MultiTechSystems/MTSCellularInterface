@@ -12,6 +12,8 @@ MTSCellularInterface::MTSCellularInterface(PinName Radio_tx, PinName Radio_rx, i
 {
     memset(_ids, 0, sizeof(_ids));
     memset(_cbs, 0, sizeof(_cbs));
+
+    _radio.attach(this, &MTSCellularInterface::event);
 }
 
 bool MTSCellularInterface::power_on(int timeout){

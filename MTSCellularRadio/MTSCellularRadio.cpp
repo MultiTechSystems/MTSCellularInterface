@@ -14,12 +14,13 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, int baud)
     _cid = "1";
     _fh = new UARTSerial(tx, rx, baud);
     _parser = new ATCmdParser(_fh);
-	_vdd1_8 = new DigitalIn(PC_5);
-	_radio_pwr = new DigitalOut(PC_3, 1);
-	_3g_onoff = new DigitalOut(PC_13, 1);
+    _vdd1_8 = new DigitalIn(PC_5);
+    _radio_pwr = new DigitalOut(PC_3, 1);
+    _3g_onoff = new DigitalOut(PC_13, 1);
+    _socket_event = NULL;
 
-	_radio_cts = NULL;
-	_radio_rts = NULL;
+    _radio_cts = NULL;
+    _radio_rts = NULL;
     _radio_dcd = NULL;
     _radio_dsr = NULL;
     _radio_ri = NULL;
@@ -1117,5 +1118,35 @@ bool MTSCellularRadio::gps_has_fix() {
         logInfo("Got GPS fix.");
         return true;
     }
+}
+
+void MTSCellularRadio::handle_urc_event(){
+    pollfh fhs;
+    int count;
+    int at_timeout;
+
+    fhs.fh = _fh;
+    fhs.events = POLLIN;
+
+    while (true) {
+        count = poll(&fhs, 1, 1000);
+        if (count > 0 && (fhs.revents & POLLIN)) {
+//            LOCK();
+//            at_timeout = _at_timeout;
+//            at_set_timeout(10); // Avoid blocking but also make sure we don't
+                                // time out if we get ahead of the serial port
+//            _at->debug_on(false); // Debug here screws with the test output
+            // Let the URCs run
+            _parser->recv("\x01");
+//            _at->debug_on(_debug_trace_on);
+//            at_set_timeout(at_timeout);
+//            UNLOCK();
+        }
+    }
+}
+
+void MTSCellularRadio::attach(Callback<void()> func) {
+    // Receive a function from the MTSCellularInterface to be called when a URC SRING occurs.
+    _socket_event = func;
 }
 
