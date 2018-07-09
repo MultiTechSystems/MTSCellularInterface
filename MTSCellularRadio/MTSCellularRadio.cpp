@@ -90,6 +90,10 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, int baud)
         }
         wait(1);
     }
+
+    // Start the event handler thread for Rx data
+    event_thread.start(callback(this, &MTSCellularRadio::handle_urc_event));
+    
 }
 
 
@@ -256,10 +260,12 @@ int MTSCellularRadio::set_pdp_context(const std::string& cgdcont_args){
 
 int MTSCellularRadio::send_basic_command(const std::string& command, unsigned int timeoutMillis)
 {
+    _mutex.lock();
     _parser->set_timeout(200);
     _parser->flush();
 
     std::string response = send_command(command, timeoutMillis);
+    _mutex.unlock();    
     if (response.size() == 0) {
         return MTS_NO_RESPONSE;
     } else if (response.find("OK") != std::string::npos) {
@@ -273,6 +279,7 @@ int MTSCellularRadio::send_basic_command(const std::string& command, unsigned in
 
 std::string MTSCellularRadio::send_command(const std::string& command, unsigned int timeoutMillis, char esc)
 {
+    _mutex.lock();
     logTrace("command = %s", command.c_str());
 
     _parser->set_timeout(200);
@@ -300,6 +307,7 @@ std::string MTSCellularRadio::send_command(const std::string& command, unsigned 
     tmr.stop();
     
     logTrace("response(%d bytes) = %s", response.length(), response.c_str());
+    _mutex.unlock();
     return response;
 }
 
@@ -593,6 +601,7 @@ void MTSCellularRadio::configure_socket(int id){
 int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 {
     int count = 0;
+    _mutex.lock();
     //disable echo so we don't collect all the echoed characters sent. _parser->flush() is not clearing them.
     send_basic_command("ATE0");
     logDebug("radio send: %s", data);
@@ -630,7 +639,7 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 
     // re-enable echo.
     send_basic_command("ATE1");
-
+    _mutex.unlock();
     return count;
 }
 
@@ -641,11 +650,12 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     char char_command[32];
     memset(char_command, 0, sizeof(char_command));
     snprintf(char_command, 32, "AT#SRECV=%d,%lu", id, amount);
-
+    _mutex.lock();
     _parser->set_timeout(200);
     _parser->set_delimiter(&CR);
     if (!_parser->send(char_command)) {
         logError("Failed to send command <%s> to the radio.\r\n", char_command);
+        _mutex.unlock();
         return 0;
     } else {
         logTrace("parser send = %s", char_command);
@@ -669,6 +679,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
                 // AT#SRECV=1,16 returns ERROR not #SRECV if there is no data to be received.
                 tmr.stop();
                 logTrace("parser getc = %s", response.c_str());
+                _mutex.unlock();
                 return 0;
             }
             if ((response.find(char_command)!= std::string::npos) && (response.find("\r\n")!= std::string::npos)){
@@ -690,10 +701,12 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
     // Get the number of characters to read in.
     std::size_t pos1 = response.find(",");
     if (pos1 == std::string::npos) {
+        _mutex.unlock();
         return 0;
     }
     std::size_t pos2 = response.find("\r");
     if (pos2 == std::string::npos) {
+        _mutex.unlock();
         return 0;
     }
 
@@ -717,6 +730,7 @@ int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 
     memcpy(data, (void *)response.c_str(), count);
     
+    _mutex.unlock();
     return count;
 }
 
@@ -1131,7 +1145,7 @@ void MTSCellularRadio::handle_urc_event(){
     while (true) {
         count = poll(&fhs, 1, 1000);
         if (count > 0 && (fhs.revents & POLLIN)) {
-//            LOCK();
+            _mutex.lock();
 //            at_timeout = _at_timeout;
 //            at_set_timeout(10); // Avoid blocking but also make sure we don't
                                 // time out if we get ahead of the serial port
@@ -1140,7 +1154,7 @@ void MTSCellularRadio::handle_urc_event(){
             _parser->recv("\x01");
 //            _at->debug_on(_debug_trace_on);
 //            at_set_timeout(at_timeout);
-//            UNLOCK();
+            _mutex.unlock();
         }
     }
 }

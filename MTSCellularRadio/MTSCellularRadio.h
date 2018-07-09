@@ -434,6 +434,9 @@ private:
 // Event thread for asynchronous received data(+SRING) and socket/connection disconnect (NO CARRIER).
 //    3GPP defines +SRING and NO CARRIER URCs.	
 	void handle_urc_event();	
+	Thread event_thread;
+	Mutex _mutex;
+
 };
 
 #endif // MTSCELLULARRADIO_H
