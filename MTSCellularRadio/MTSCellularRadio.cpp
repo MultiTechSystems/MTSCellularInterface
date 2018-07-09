@@ -93,7 +93,8 @@ MTSCellularRadio::MTSCellularRadio(PinName tx, PinName rx, int baud)
 
     // Start the event handler thread for Rx data
     event_thread.start(callback(this, &MTSCellularRadio::handle_urc_event));
-    
+    // URC handlers for sockets
+    _parser->oob("SRING", callback(this, &MTSCellularRadio::SRING_URC));    
 }
 
 
@@ -1162,5 +1163,11 @@ void MTSCellularRadio::handle_urc_event(){
 void MTSCellularRadio::attach(Callback<void()> func) {
     // Receive a function from the MTSCellularInterface to be called when a URC SRING occurs.
     _socket_event = func;
+}
+
+// Callback for socket receive.
+void MTSCellularRadio::SRING_URC()
+{
+    _socket_event();
 }
 

@@ -354,7 +354,7 @@ int MTSCellularInterface::socket_recv(void *handle, void *data, unsigned size){
     struct cellular_socket *socket = (struct cellular_socket *)handle;
 
     int rcv = _radio.receive(socket->id, data, size);
-    if (rcv >= 0){
+    if (rcv > 0){
         return rcv;
     }
     switch (rcv) {

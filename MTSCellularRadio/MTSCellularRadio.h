@@ -431,9 +431,10 @@ protected:
     DigitalOut* _reset_line;	//Maps to the radio's reset signal 
 
 private:
-// Event thread for asynchronous received data(+SRING) and socket/connection disconnect (NO CARRIER).
-//    3GPP defines +SRING and NO CARRIER URCs.	
+// Event thread for asynchronous received data(SRING) and socket/connection disconnect (NO CARRIER).
+//    3GPP defines SRING and NO CARRIER URCs.	
 	void handle_urc_event();	
+    void SRING_URC();
 	Thread event_thread;
 	Mutex _mutex;
 
