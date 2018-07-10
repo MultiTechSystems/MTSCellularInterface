@@ -647,6 +647,17 @@ int MTSCellularRadio::send(int id, const void *data, uint32_t amount)
 
 int MTSCellularRadio::receive(int id, void *data, uint32_t amount)
 {   
+    // Check that the connection is up.
+    if (!is_connected()) {
+        logDebug("Unable to receive: no connection");
+        return MTS_NO_CONNECTION;
+    }
+    // Check that the socket is open.
+    if (!is_socket_open(id)) {
+        logDebug("Unable to receive: socket not open");
+        return MTS_NO_SOCKET;
+    }
+    
     // Send command to receive up to 'amount' characters.
     char char_command[32];
     memset(char_command, 0, sizeof(char_command));
