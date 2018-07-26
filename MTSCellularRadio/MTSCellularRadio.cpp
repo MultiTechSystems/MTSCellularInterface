@@ -541,7 +541,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
     if (str_type.compare(str_tcp) == 0) {
         snprintf(char_command, 64, "AT#SD=%d,0,%d,\"%s\",0,0,1", id, port, addr);
     } else {
-        snprintf(char_command, 64, "AT#SD=%d,1,%d,\"%s\",0,0,1", id, port, addr);
+        snprintf(char_command, 64, "AT#SD=%d,1,%d,\"%s\",0,49152,1", id, port, addr);
     }
     std::string response = send_command(std::string(char_command), 65000);
     if (response.find("OK") != std::string::npos){
@@ -557,7 +557,7 @@ int MTSCellularRadio::open(const char *type, int id, const char* addr, int port)
         logError("Socket[%d] open failed. No cellular connection.", id);
         return MTS_NO_CONNECTION;
     }
-    logError("Socket[%d] open failed", id);
+    logError("Socket[%d] open failed: %s", id, response.c_str());
     return MTS_FAILURE;    
 }
 
@@ -1179,6 +1179,7 @@ void MTSCellularRadio::attach(Callback<void()> func) {
 // Callback for socket receive.
 void MTSCellularRadio::SRING_URC()
 {
+//    printf("**** socket rcv callback ****\r\n");
     _socket_event();
 }
 

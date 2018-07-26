@@ -393,7 +393,7 @@ int MTSCellularInterface::socket_sendto(void *handle, const SocketAddress &addre
 int MTSCellularInterface::socket_recvfrom(void *handle, SocketAddress *address, void *data, unsigned size) {
     struct cellular_socket *socket = (struct cellular_socket *)handle;
     int ret = socket_recv(socket, data, size);
-    if (ret >= 0 && address) {
+    if ((ret >= 0) && address) {
         *address = socket->addr;
     }
 
