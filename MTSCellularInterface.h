@@ -11,13 +11,13 @@
 class MTSCellularInterface : public NetworkStack, public CellularBase
 {
 public:
-	MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX, int baud = 115200);
+    MTSCellularInterface(PinName Radio_tx = RADIO_TX, PinName Radio_rx = RADIO_RX, int baud = 115200);
 
     /** Power the modem on or off.
     * Power off closes any open sockets, disconnects from the cellular network then powers the modem off.
     * Power on powers up the modem and verifies AT command response.
     */
-//	virtual bool radioPower(Power option);
+//  virtual bool radioPower(Power option);
 
 
     /** Get the version of the library currently in use
@@ -45,7 +45,7 @@ public:
     * 5. For CE910 a 30s delay is required even though 1.8v goes low.
     *
     * @returns 0 on success else a negative value.
-    */	
+    */
     virtual int power_off();
 
     /** A method to check if the radio is powered off. Check 1.8v from the radio and 3.8v to the radio.
@@ -77,34 +77,34 @@ public:
     virtual int set_pdp_context(const char *cgdcont_args);
 
     /** A method for sending a basic AT command to the radio. A basic AT command is
-	* one that simply has a response of OK or ERROR.
-	*
-	* @param command string to send to the radio.
-	* @param timeoutMillis the time in millis to wait for a response before returning. If
-	*   OK or ERROR are detected in the response the timer is short circuited.
-	* @returns 0 for success or a negative number for a failure.
-	*/
-	virtual int send_basic_command(const std::string& command, unsigned int timeoutMillis = 1000);
-	
+    * one that simply has a response of OK or ERROR.
+    *
+    * @param command string to send to the radio.
+    * @param timeoutMillis the time in millis to wait for a response before returning. If
+    *   OK or ERROR are detected in the response the timer is short circuited.
+    * @returns 0 for success or a negative number for a failure.
+    */
+    virtual int send_basic_command(const std::string& command, unsigned int timeoutMillis = 1000);
+
     //Cellular Radio Specific
     /** A method for sending AT commands to the radio.
-	*
-	* @param command string to send to the radio.
-	* @param timeoutMillis the time in millis to wait for a response before returning. If
-	*   OK or ERROR are detected in the response the timer is short circuited.
-	* @param esc escape character to add at the end of the command, defaults to
-	*   carriage return (CR).  Does not append any character if esc == 0.
-	* @returns a string containing the response to the command. The string will be empty upon failure.
-	*/
+    *
+    * @param command string to send to the radio.
+    * @param timeoutMillis the time in millis to wait for a response before returning. If
+    *   OK or ERROR are detected in the response the timer is short circuited.
+    * @param esc escape character to add at the end of the command, defaults to
+    *   carriage return (CR).  Does not append any character if esc == 0.
+    * @returns a string containing the response to the command. The string will be empty upon failure.
+    */
     virtual std::string send_command(const std::string& command, unsigned int timeoutMillis = 1000, char esc = CR);
 
     /** Make cellular connection
     *
     *  @param sim_pin     PIN for the SIM card    
-    *  @param apn		  optionally, access point name
-    *  @param uname 	  optionally, Username
-    *  @param pwd		  optionally, password
-    *  @return			  NSAPI_ERROR_OK on success, or negative error code on failure
+    *  @param apn         optionally, access point name
+    *  @param uname       optionally, Username
+    *  @param pwd         optionally, password
+    *  @return            NSAPI_ERROR_OK on success, or negative error code on failure
     */
     virtual int connect(const char *sim_pin, const char *apn = "", const char *username = "", const char *password = "");
 
@@ -114,20 +114,20 @@ public:
     *  @return         0 on success, negative error code on failure
     */
     virtual int connect(const char cid);
-	
+
     /** Make cellular connection
     *
     *  If the SIM requires a PIN, and it is not set/invalid, NSAPI_ERROR_AUTH_ERROR is returned.
     *
-    *  @return			  NSAPI_ERROR_OK on success, or negative error code on failure
+    *  @return            NSAPI_ERROR_OK on success, or negative error code on failure
     */
-	virtual int connect();
+    virtual int connect();
      
     /** Cellular disconnect
     *
     *  @return         0 on success, negative error code on failure
     */
-	virtual int disconnect();
+    virtual int disconnect();
 
     /** Checks if the radio is connected to the cell network.
     * Checks context activation.
@@ -178,15 +178,15 @@ public:
     *
     * @returns statusInfo.
     */
-	virtual MTSCellularRadio::statusInfo get_radio_status();
+    virtual MTSCellularRadio::statusInfo get_radio_status();
 
 
     /** Gets information about the radio and logs it to the debug port.
     *
     * @returns 
     */
-	virtual void log_radio_status();
-	
+    virtual void log_radio_status();
+
     /** This method is used to send an SMS message.
     *
     * @param phone_number the phone number to send the message to as a string.
@@ -228,7 +228,7 @@ public:
     /** Enables GPS.
     *
     *  @return 0 on success, negative error code on failure
-	*/
+    */
     virtual int gps_enable();
 
     /** Disables GPS.
@@ -255,152 +255,150 @@ public:
     */
     virtual bool gps_has_fix();	
 
-	/** Translates a hostname to an IP address with specific version
-	 *
-	 *	The hostname may be either a domain name or an IP address. If the
-	 *	hostname is an IP address, no network transactions will be performed.
-	 *
-	 *	If no stack-specific DNS resolution is provided, the hostname
-	 *	will be resolve using a UDP socket on the stack.
-	 *
-	 *	@param address	Destination for the host SocketAddress
-	 *	@param host 	Hostname to resolve
-	 *	@param version	IP version of address to resolve, NSAPI_UNSPEC indicates
-	 *					version is chosen by the stack (defaults to NSAPI_UNSPEC)
-	 *	@return 		0 on success, negative error code on failure
-	 */
-//	using NetworkInterface::gethostbyname;
+    /** Translates a hostname to an IP address with specific version
+     *
+     *  The hostname may be either a domain name or an IP address. If the
+     *  hostname is an IP address, no network transactions will be performed.
+     *
+     *  If no stack-specific DNS resolution is provided, the hostname
+     *  will be resolve using a UDP socket on the stack.
+     *
+     *  @param address  Destination for the host SocketAddress
+     *  @param host     Hostname to resolve
+     *  @param version  IP version of address to resolve, NSAPI_UNSPEC indicates
+     *	                   version is chosen by the stack (defaults to NSAPI_UNSPEC)
+     *  @return         0 on success, negative error code on failure
+     */
+//  using NetworkInterface::gethostbyname;
     virtual int gethostbyname(const char *name, SocketAddress *address, nsapi_version_t version);
 
 
-	/** Add a domain name server to list of servers to query
-	 *
-	 *	@param addr 	Destination for the host address
-	 *	@return 		0 on success, negative error code on failure
-	 */
-//	using NetworkInterface::add_dns_server;
+    /** Add a domain name server to list of servers to query
+     *
+     *  @param addr     Destination for the host address
+     *  @return         0 on success, negative error code on failure
+     */
+//  using NetworkInterface::add_dns_server;
 
 protected:
-	/** Open a socket
-	*  @param handle       Handle in which to store new socket
-	*  @param proto        Type of socket to open, NSAPI_TCP or NSAPI_UDP
-	*  @return             0 on success, negative on failure
-	*/
-	virtual int socket_open(void **handle, nsapi_protocol_t proto);
+    /** Open a socket
+    *  @param handle       Handle in which to store new socket
+    *  @param proto        Type of socket to open, NSAPI_TCP or NSAPI_UDP
+    *  @return             0 on success, negative on failure
+    */
+    virtual int socket_open(void **handle, nsapi_protocol_t proto);
 
-	/** Close the socket
-	*  @param handle       Socket handle
-	*  @return             0 on success, negative on failure
-	*  @note On failure, any memory associated with the socket must still
-	*        be cleaned up
-	*/
-	virtual int socket_close(void *handle);
+    /** Close the socket
+    *  @param handle       Socket handle
+    *  @return             0 on success, negative on failure
+    *  @note On failure, any memory associated with the socket must still
+    *        be cleaned up
+    */
+    virtual int socket_close(void *handle);
 
-	/** Bind a server socket to a specific port
-	*  @param handle       Socket handle
-	*  @param address      Local address to listen for incoming connections on
-	*  @return             0 on success, negative on failure.
-	*/
-	virtual int socket_bind(void *handle, const SocketAddress &address);
+    /** Bind a server socket to a specific port
+    *  @param handle       Socket handle
+    *  @param address      Local address to listen for incoming connections on
+    *  @return             0 on success, negative on failure.
+    */
+    virtual int socket_bind(void *handle, const SocketAddress &address);
 
-	/** Start listening for incoming connections
-	*  @param handle       Socket handle
-	*  @param backlog      Number of pending connections that can be queued up at any
-	*                      one time [Default: 1]
-	*  @return             0 on success, negative on failure
-	*/
-	virtual int socket_listen(void *handle, int backlog);
+    /** Start listening for incoming connections
+    *  @param handle       Socket handle
+    *  @param backlog      Number of pending connections that can be queued up at any
+    *                      one time [Default: 1]
+    *  @return             0 on success, negative on failure
+    */
+    virtual int socket_listen(void *handle, int backlog);
 
-	/** Connects this TCP socket to the server
-	*  @param handle       Socket handle
-	*  @param address      SocketAddress to connect to
-	*  @return             0 on success, negative on failure
-	*/
-	virtual int socket_connect(void *handle, const SocketAddress &address);
+    /** Connects this TCP socket to the server
+    *  @param handle       Socket handle
+    *  @param address      SocketAddress to connect to
+    *  @return             0 on success, negative on failure
+    */
+    virtual int socket_connect(void *handle, const SocketAddress &address);
 
-	/** Accept a new connection.
-	*  @param handle       Handle in which to store new socket
-	*  @param server       Socket handle to server to accept from
-	*  @return             0 on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*        immediately return NSAPI_ERROR_WOULD_WAIT
-	*/
-	virtual int socket_accept(void *handle, void **socket, SocketAddress *address);
+    /** Accept a new connection.
+    *  @param handle       Handle in which to store new socket
+    *  @param server       Socket handle to server to accept from
+    *  @return             0 on success, negative on failure
+    *  @note This call is not-blocking, if this call would block, must
+    *        immediately return NSAPI_ERROR_WOULD_WAIT
+    */
+    virtual int socket_accept(void *handle, void **socket, SocketAddress *address);
 
-	/** Send data to the remote host
-	*  @param handle       Socket handle
-	*  @param data         The buffer to send to the host
-	*  @param size        The length of the buffer to send
-	*  @return             Number of written bytes on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*		 immediately return NSAPI_ERROR_WOULD_WAIT
-	*/
+    /** Send data to the remote host
+    *  @param handle       Socket handle
+    *  @param data         The buffer to send to the host
+    *  @param size        The length of the buffer to send
+    *  @return             Number of written bytes on success, negative on failure
+    *  @note This call is not-blocking, if this call would block, must
+    *        immediately return NSAPI_ERROR_WOULD_WAIT
+    */
+    virtual int socket_send(void *handle, const void *data, unsigned size);
 
-	virtual int socket_send(void *handle, const void *data, unsigned size);
+    /** Receive data from the remote host
+    *  @param handle       Socket handle
+    *  @param handle       Socket handle
+    *  @param data       The buffer in which to store the data received from the host
+    *  @param size       The maximum length of the buffer
+    *  @return            Number of received bytes on success, negative on failure, 0 if nothing received
+    *  @note This call is not-blocking, if this call would block, must
+    *        immediately return NSAPI_ERROR_WOULD_WAIT
+    */
+    virtual int socket_recv(void *handle, void *data, unsigned size);
 
-	/** Receive data from the remote host
-	*  @param handle       Socket handle
-	*  @param handle	   Socket handle
-	*  @param data       The buffer in which to store the data received from the host
-	*  @param size       The maximum length of the buffer
-	*  @return            Number of received bytes on success, negative on failure, 0 if nothing received
-	*  @note This call is not-blocking, if this call would block, must
-	*		 immediately return NSAPI_ERROR_WOULD_WAIT
-	*/
+    /** Send a packet to a remote endpoint
+    *  @param handle       Socket handle
+    *  @param address      The remote SocketAddress
+    *  @param data         The packet to be sent
+    *  @param size         The length of the packet to be sent
+    *  @return             The number of written bytes on success, negative on failure
+    *  @note This call is not-blocking, if this call would block, must
+    *        immediately return NSAPI_ERROR_WOULD_WAIT
+    */
+    virtual int socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size);
 
-	virtual int socket_recv(void *handle, void *data, unsigned size);
+    /** Receive a packet from a remote endpoint
+    *  @param handle       Socket handle
+    *  @param address      Destination for the remote SocketAddress or null
+    *  @param buffer       The buffer for storing the incoming packet data
+    *                      If a packet is too long to fit in the supplied buffer,
+    *                      excess bytes are discarded
+    *  @param size         The length of the buffer
+    *  @return             The number of received bytes on success, negative on failure
+    *  @note This call is not-blocking, if this call would block, must
+    *        immediately return NSAPI_ERROR_WOULD_WAIT
+    */
+    virtual int socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size);
 
-	/** Send a packet to a remote endpoint
-	*  @param handle       Socket handle
-	*  @param address      The remote SocketAddress
-	*  @param data         The packet to be sent
-	*  @param size         The length of the packet to be sent
-	*  @return             The number of written bytes on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*        immediately return NSAPI_ERROR_WOULD_WAIT
-	*/
-	virtual int socket_sendto(void *handle, const SocketAddress &address, const void *data, unsigned size);
+    /** Register a callback on state change of the socket
+    *  @param handle       Socket handle
+    *  @param callback     Function to call on state change
+    *  @param data         Argument to pass to callback
+    *  @note Callback may be called in an interrupt context.
+    */
+    virtual void socket_attach(void *handle, void (*callback)(void *), void *data);
 
-	/** Receive a packet from a remote endpoint
-	*  @param handle       Socket handle
-	*  @param address      Destination for the remote SocketAddress or null
-	*  @param buffer       The buffer for storing the incoming packet data
-	*                      If a packet is too long to fit in the supplied buffer,
-	*                      excess bytes are discarded
-	*  @param size         The length of the buffer
-	*  @return             The number of received bytes on success, negative on failure
-	*  @note This call is not-blocking, if this call would block, must
-	*        immediately return NSAPI_ERROR_WOULD_WAIT
-	*/
-	virtual int socket_recvfrom(void *handle, SocketAddress *address, void *buffer, unsigned size);
-
-	/** Register a callback on state change of the socket
-	*  @param handle       Socket handle
-	*  @param callback     Function to call on state change
-	*  @param data         Argument to pass to callback
-	*  @note Callback may be called in an interrupt context.
-	*/
-	virtual void socket_attach(void *handle, void (*callback)(void *), void *data);
-
-	/** Provide access to the NetworkStack object
-	*
-	*  @return The underlying NetworkStack object
-	*/
-	virtual NetworkStack *get_stack()
-	{
-		return this;
-	}
+    /** Provide access to the NetworkStack object
+    *
+    *  @return The underlying NetworkStack object
+    */
+    virtual NetworkStack *get_stack()
+    {
+        return this;
+    }
 
 private:
-	MTSCellularRadio _radio;
+    MTSCellularRadio _radio;
     bool _ids[MAX_SOCKET_COUNT+1];
 
     void event();
 
-	struct {
-		void (*callback)(void *);
-		void *data;
-	} _cbs[MAX_SOCKET_COUNT+1];
+    struct {
+        void (*callback)(void *);
+        void *data;
+    } _cbs[MAX_SOCKET_COUNT+1];
 
     struct cellular_socket {
         int id;
